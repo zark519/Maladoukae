@@ -946,6 +946,77 @@
             if (viewName === 'sport') renderSportCalendar();
         }
 
+        // ==================== DASHBOARD OVERVIEW (UPDATED) ====================
+        function updateDashboardOverview() {
+            const monthSelect = document.getElementById('dashboard-month-select');
+            const selectedMonth = monthSelect ? monthSelect.value : 'ALL';
+
+            // 1. 計算日常飲食開支 (Food Cost)
+            let foodTotal = 0;
+            foodRecords.forEach(r => {
+                if (selectedMonth === 'ALL' || (r.date && r.date.startsWith(selectedMonth))) {
+                    foodTotal += (r.cost || 0);
+                }
+            });
+            const foodCount = foodRecords.filter(r => selectedMonth === 'ALL' || (r.date && r.date.startsWith(selectedMonth))).length;
+            document.getElementById('dash-btn-food').innerText = `$${foodTotal.toFixed(0)} (${foodCount}筆)`;
+
+            // 2. 計算九巴月票與交通實際支出 (Transit Cost)
+            let transitTotal = 0;
+            transitRecords.forEach(r => {
+                if (selectedMonth === 'ALL' || (r.date && r.date.startsWith(selectedMonth))) {
+                    // 若屬於實際支出或月票成本，計入開支；政府補貼(R)則作扣減
+                    if (r.typeCode === 'R') {
+                        transitTotal -= (r.rawPrice || 0);
+                    } else {
+                        transitTotal += (r.actualPay || 0);
+                    }
+                }
+            });
+            document.getElementById('dash-btn-transit').innerText = `$${transitTotal.toFixed(0)}`;
+
+            // 3. 計算運動洗費 (Sport Cost)
+            let sportTotal = 0;
+            sportRecords.forEach(r => {
+                if (selectedMonth === 'ALL' || (r.date && r.date.startsWith(selectedMonth))) {
+                    sportTotal += (r.cost || 0);
+                }
+            });
+            document.getElementById('dash-btn-sport').innerText = `$${sportTotal.toFixed(0)} (${sportRecords.filter(r => selectedMonth === 'ALL' || (r.date && r.date.startsWith(selectedMonth))).length}次)`;
+
+            // 4. 計算心頭好開支 (Love Cost)
+            let loveTotal = 0;
+            loveRecords.forEach(r => {
+                if (selectedMonth === 'ALL' || (r.date && r.date.startsWith(selectedMonth))) {
+                    loveTotal += (r.money || 0);
+                }
+            });
+            document.getElementById('dash-btn-love').innerText = `$${loveTotal.toFixed(0)} (${loveRecords.filter(r => selectedMonth === 'ALL' || (r.date && r.date.startsWith(selectedMonth))).length}筆)`;
+
+            // 5. 計算旅遊洗費 (Trip Cost)
+            let tripTotal = 0;
+            trips.forEach(t => {
+                t.expenses.forEach(e => {
+                    if (selectedMonth === 'ALL' || (e.date && e.date.startsWith(selectedMonth))) {
+                        const rate = t.exchangeTable[e.currency] || e.rateUsed || 1.0;
+                        tripTotal += t.isFrozen ? (e.hkdAmount || 0) : (e.amount * rate);
+                    }
+                });
+            });
+            document.getElementById('dash-btn-trip').innerText = `$${tripTotal.toFixed(0)}`;
+
+            // 6. 應付款與應收款統計 (Debt)
+            let payableTotal = 0;
+            debtRecords.filter(r => r.kind === 'payable').forEach(r => {
+                payableTotal += (r.money || 0);
+            });
+            document.getElementById('dash-btn-debt').innerText = `$${payableTotal.toFixed(0)}`;
+
+            // 7. 總開支計算合成 (總開支 = 日常飲食 + 九巴月票/交通 + 運動洗費 + 心頭好 + 旅遊開支)
+            const grandTotalExpense = foodTotal + transitTotal + sportTotal + loveTotal + tripTotal;
+            document.getElementById('home-total-expense').innerText = `$${grandTotalExpense.toFixed(1)}`;
+        }
+
         // ==================== SPORT MODULE LOGIC ====================
         let sportRecords = JSON.parse(localStorage.getItem('sport_records_v1') || '[]');
         let sportCurrentYear = new Date().getFullYear();
@@ -2311,7 +2382,7 @@
         }
 
 
-        // ==================== FOOD MODULE LOGIC (UPDATED) ====================
+        // ==================== FOOD MODULE LOGIC ====================
         let foodCycleId = parseInt(localStorage.getItem('god_cookery_cycle_id') || '1');
         let foodRecords = JSON.parse(localStorage.getItem('god_cookery_records_v2') || '[]');
         let foodPastCycles = JSON.parse(localStorage.getItem('god_cookery_past_cycles') || '[]');
@@ -2339,11 +2410,28 @@
             }
         }
 
+        function selectFoodType(type) {
+            currentSelectedFoodType = type;
+            const btnLuxury = document.getElementById('btn-luxury');
+            const btnSimple = document.getElementById('btn-simple');
+            const costInput = document.getElementById('food-input-cost');
+            
+            if (type === '豪華大餐') {
+                btnLuxury.classList.add('active');
+                btnSimple.classList.remove('active');
+                costInput.placeholder = '例：180 (預設預算 $200)';
+            } else {
+                btnSimple.classList.add('active');
+                btnLuxury.classList.remove('active');
+                costInput.placeholder = '例：70 (預設預算 $100)';
+            }
+        }
+
         function openFoodModal() {
             populateFoodCycleJump();
             document.getElementById('food-input-date').valueAsDate = new Date();
             document.getElementById('food-input-name').value = '';
-            document.getElementById('food-input-cost').value = '180';
+            document.getElementById('food-input-cost').value = '';
             selectFoodType('豪華大餐');
             document.getElementById('food-modal').classList.add('active');
         }
@@ -2352,21 +2440,13 @@
             document.getElementById('food-modal').classList.remove('active');
         }
 
-        function selectFoodType(type) {
-            currentSelectedFoodType = type;
-            const btnLuxury = document.getElementById('btn-luxury');
-            const btnSimple = document.getElementById('btn-simple');
-            const costInput = document.getElementById('food-input-cost');
+        function openFoodHistoryModal() {
+            renderFoodHistory();
+            document.getElementById('food-history-modal').classList.add('active');
+        }
 
-            if (type === '豪華大餐') {
-                btnLuxury.classList.add('active');
-                btnSimple.classList.remove('active');
-                costInput.value = '180';
-            } else {
-                btnSimple.classList.add('active');
-                btnLuxury.classList.remove('active');
-                costInput.value = '80';
-            }
+        function closeFoodHistoryModal() {
+            document.getElementById('food-history-modal').classList.remove('active');
         }
 
         function saveFoodRecord() {
@@ -2402,14 +2482,14 @@
         }
 
         function deleteLastFoodStep() {
-            const activeIndex = foodRecords.findIndex(r => r.cycleId === foodCycleId && r.type !== '豪華大餐歸零結算');
-            if (activeIndex === -1) {
-                alert('本期沒有可刪除的餐食記錄！');
+            const activeRecords = foodRecords.filter(r => r.cycleId === foodCycleId);
+            if (activeRecords.length === 0) {
+                alert('本週期沒有可刪除的記錄！');
                 return;
             }
-            const lastRecord = foodRecords[activeIndex];
-            if (confirm(`確定要刪除最近輸入的紀錄嗎？\n\n📌 「${lastRecord.name}」`)) {
-                foodRecords.splice(activeIndex, 1);
+            const lastRecord = activeRecords[0];
+            if (confirm(`確定要刪除最近一筆餐食記錄嗎？\n\n📌 「${lastRecord.name}」`)) {
+                foodRecords = foodRecords.filter(r => r.id !== lastRecord.id);
                 localStorage.setItem('god_cookery_records_v2', JSON.stringify(foodRecords));
                 renderFood();
                 updateDashboardOverview();
@@ -2418,66 +2498,43 @@
 
         function deleteFoodRecordDirect(id) {
             if (confirm('確定要刪除這筆餐食記錄嗎？')) {
-                foodRecords = foodRecords.filter(item => item.id !== id);
+                foodRecords = foodRecords.filter(r => r.id !== id);
                 localStorage.setItem('god_cookery_records_v2', JSON.stringify(foodRecords));
                 renderFood();
                 updateDashboardOverview();
             }
         }
 
-        // 豪華大餐歸零結算功能實作
         function settleLuxuryReset() {
             const activeRecords = foodRecords.filter(r => r.cycleId === foodCycleId);
-            // 原始限制改為 4，計算剩餘次數
             const luxuryCount = activeRecords.filter(r => r.type === '豪華大餐').length;
-            const luxuryLeft = 4 - luxuryCount;
-
-            if (luxuryLeft <= 0) {
-                alert('目前豪華大餐剩餘次數不大於 0（或已歸零），無需進行歸零結算！');
-                return;
-            }
-
-            if (confirm(`確定要將當前剩餘的 ${luxuryLeft} 次豪華大餐進行歸零結算嗎？\n將會增加 $${luxuryLeft * 100} 到結餘中。`)) {
-                const addAmount = luxuryLeft * 100;
-                const todayStr = new Date().toISOString().substring(0, 10);
-
-                // 加一筆 record "豪華大餐歸零結算" 數值為歸零前次數 x 100
-                const resetRecord = {
-                    id: Date.now(),
-                    cycleId: foodCycleId,
-                    date: todayStr,
-                    type: '豪華大餐歸零結算',
-                    name: `豪華大餐歸零結算 (${luxuryLeft}次 x $100)`,
-                    cost: -addAmount, // 負數代表增加結餘/盈餘
-                    budget: 0,
-                    diff: addAmount,
-                    isResetSettlement: true,
-                    settledCount: luxuryLeft
-                };
-
-                foodRecords.unshift(resetRecord);
-                localStorage.setItem('god_cookery_records_v2', JSON.stringify(foodRecords));
-
+            const reward = luxuryCount * 100;
+            
+            if (confirm(`✨ 豪華大餐歸零結算：\n當前週期共有 ${luxuryCount} 次豪華大餐，可轉換為結餘 $${reward}。\n確定要進行結算並將次數歸零嗎？`)) {
+                // 將所有豪華大餐標記為已結算或移除紀錄（此處範例為把結餘加進去）
+                let currentBalance = parseFloat(localStorage.getItem('god_cookery_balance') || '0');
+                currentBalance += reward;
+                localStorage.setItem('god_cookery_balance', currentBalance.toString());
+                
                 renderFood();
                 updateDashboardOverview();
-                alert(`已成功進行歸零結算！增加結餘 +$${addAmount}。`);
+                alert(`已成功結算！增加結餘 +$${reward}`);
             }
         }
 
         function confirmResetFoodCycle() {
             const activeRecords = foodRecords.filter(r => r.cycleId === foodCycleId);
-            if (confirm('確定要重置食幾多慳幾多週期嗎？當前期的紀錄將會存檔。')) {
+            if (confirm('確定要重置並開啟新週期嗎？當前紀錄將會被存檔。')) {
                 const totalDiff = activeRecords.reduce((sum, r) => sum + r.diff, 0);
-
-                const cycleSummary = {
+                const summary = {
                     cycleId: foodCycleId,
                     startDate: activeRecords.length > 0 ? activeRecords[activeRecords.length - 1].date : '無紀錄',
                     endDate: activeRecords.length > 0 ? activeRecords[0].date : '無紀錄',
-                    totalBalance: totalDiff,
+                    totalDiff: totalDiff,
                     recordCount: activeRecords.length
                 };
 
-                foodPastCycles.unshift(cycleSummary);
+                foodPastCycles.unshift(summary);
                 localStorage.setItem('god_cookery_past_cycles', JSON.stringify(foodPastCycles));
 
                 foodCycleId += 1;
@@ -2485,56 +2542,24 @@
 
                 renderFood();
                 updateDashboardOverview();
-                alert(`已成功開啟新週期 #${foodCycleId}！`);
+                alert(`已成功開啟第 #${foodCycleId} 週期！`);
             }
-        }
-
-        function openFoodHistoryModal() {
-            const listEl = document.getElementById('food-history-list');
-            if (foodPastCycles.length === 0) {
-                listEl.innerHTML = '<div style="text-align:center; color:#9ca3af; padding:20px;">暫無已封存的週期紀錄</div>';
-            } else {
-                listEl.innerHTML = foodPastCycles.map(c => `
-                    <div class="history-card">
-                        <div class="history-header">
-                            <span>週期 #${c.cycleId}</span>
-                            <span style="color: ${c.totalBalance >= 0 ? '#059669' : '#d90429'};">總結餘: $${c.totalBalance.toFixed(1)}</span>
-                        </div>
-                        <div class="history-summary">
-                            <div>起始日期：${c.startDate}</div>
-                            <div>結束日期：${c.endDate}</div>
-                            <div>紀錄筆數：${c.recordCount} 筆</div>
-                        </div>
-                    </div>
-                `).join('');
-            }
-            document.getElementById('food-history-modal').classList.add('active');
-        }
-
-        function closeFoodHistoryModal() {
-            document.getElementById('food-history-modal').classList.remove('active');
         }
 
         function renderFood() {
             document.getElementById('food-cycle-id').innerText = `週期 #${foodCycleId}`;
             const activeRecords = foodRecords.filter(r => r.cycleId === foodCycleId);
 
-            // 原始限制改為 4
-            const luxuryCount = activeRecords.filter(r => r.type === '豪華大餐').length;
-            
-            // 檢查是否有進行過歸零結算，如果有，剩餘次數應該要歸零
-            const hasResetSettled = activeRecords.some(r => r.isResetSettlement);
-            let luxuryLeft = 4 - luxuryCount;
-            if (hasResetSettled || luxuryLeft < 0) {
-                luxuryLeft = 0;
-            }
+            const luxuryLeft = 4 - activeRecords.filter(r => r.type === '豪華大餐').length;
+            document.getElementById('luxury-left').innerText = `${Math.max(0, luxuryLeft)} 次`;
 
-            document.getElementById('luxury-left').innerText = `${luxuryLeft} 次`;
+            const totalDiff = activeRecords.reduce((sum, r) => sum + r.diff, 0);
+            const extraBalance = parseFloat(localStorage.getItem('god_cookery_balance') || '0');
+            const finalBalance = totalDiff + extraBalance;
 
-            const totalBalance = activeRecords.reduce((sum, r) => sum + r.diff, 0);
             const balanceEl = document.getElementById('total-balance');
-            balanceEl.innerText = `$${totalBalance.toFixed(1)}`;
-            balanceEl.style.color = totalBalance >= 0 ? 'var(--success)' : 'var(--danger)';
+            balanceEl.innerText = `$${finalBalance.toFixed(1)}`;
+            balanceEl.className = `kpi-value ${finalBalance >= 0 ? 'surplus' : 'deficit'}`;
 
             const listEl = document.getElementById('food-records-list');
             if (activeRecords.length === 0) {
@@ -2543,35 +2568,21 @@
             }
 
             listEl.innerHTML = activeRecords.map(r => {
-                if (r.isResetSettlement) {
-                    return `
-                    <div class="record-card" style="background: #f0fdf4; border-left: 4px solid var(--success);">
-                        <div class="record-info">
-                            <div><span class="badge badge-reimburse">結算</span> ${r.name}</div>
-                            <div>日期：${r.date}</div>
-                        </div>
-                        <div class="record-amount">
-                            <div class="record-cost" style="color: var(--success);">+$${r.diff.toFixed(1)}</div>
-                            <div style="margin-top: 4px;">
-                                <button class="bookmark-del-btn" onclick="deleteFoodRecordDirect(${r.id})">刪除</button>
-                            </div>
-                        </div>
-                    </div>
-                    `;
-                }
-
-                const badgeClass = r.type === '豪華大餐' ? 'badge-luxury' : 'badge-simple';
-                const diffText = r.diff >= 0 ? `省了 +$${r.diff.toFixed(1)}` : `超支 -$${Math.abs(r.diff).toFixed(1)}`;
-
+                const isLuxury = r.type === '豪華大餐';
                 return `
                 <div class="record-card">
                     <div class="record-info">
-                        <div><span class="badge ${badgeClass}">${r.type}</span> ${r.name}</div>
-                        <div>日期：${r.date} (預算 $${r.budget} / 實付 $${r.cost})</div>
+                        <div>
+                            <span class="badge ${isLuxury ? 'badge-luxury' : 'badge-simple'}">${r.type}</span>
+                            ${r.name}
+                        </div>
+                        <div>${r.date} (預算 $${r.budget})</div>
                     </div>
                     <div class="record-amount">
                         <div class="record-cost">$${r.cost.toFixed(1)}</div>
-                        <div class="record-diff ${r.diff >= 0 ? 'surplus' : 'deficit'}">${diffText}</div>
+                        <div class="record-diff ${r.diff >= 0 ? 'surplus' : 'deficit'}">
+                            ${r.diff >= 0 ? '慳咗 +$' + r.diff.toFixed(1) : '超支 -$' + Math.abs(r.diff).toFixed(1)}
+                        </div>
                         <div style="margin-top: 4px;">
                             <button class="btn-edit-item" onclick="openEditFoodModal(${r.id})">編輯</button>
                             <button class="bookmark-del-btn" onclick="deleteFoodRecordDirect(${r.id})">刪除</button>
@@ -2582,66 +2593,41 @@
             }).join('');
         }
 
-
-        // ==================== DASHBOARD OVERVIEW & BACKUP ====================
-        function updateDashboardOverview() {
-            // 1. Food KPI
-            const activeFood = foodRecords.filter(r => r.cycleId === foodCycleId);
-            const foodTotalBal = activeFood.reduce((sum, r) => sum + r.diff, 0);
-            document.getElementById('dash-btn-food').innerText = `$${foodTotalBal.toFixed(1)} (${activeFood.length}筆)`;
-
-            // 2. Transit KPI
-            const activeTransit = transitRecords.filter(r => r.cycleId === transitCycleId && !r.isPassPurchase);
-            const transitSaved = activeTransit.reduce((sum, r) => sum + r.saved, 0);
-            document.getElementById('dash-btn-transit').innerText = `$${transitSaved.toFixed(1)}`;
-
-            // 3. Sport KPI
-            const sportCost = sportRecords.reduce((sum, r) => sum + r.cost, 0);
-            document.getElementById('dash-btn-sport').innerText = `$${sportCost.toFixed(1)} (${sportRecords.length}次)`;
-
-            // 4. Love KPI
-            const loveCost = loveRecords.reduce((sum, r) => sum + r.money, 0);
-            document.getElementById('dash-btn-love').innerText = `$${loveCost.toFixed(1)} (${loveRecords.length}筆)`;
-
-            // 5. Trip KPI
-            let totalTripHkd = 0;
-            trips.forEach(t => {
-                t.expenses.forEach(e => {
-                    const rate = t.exchangeTable[e.currency] || e.rateUsed || 1.0;
-                    totalTripHkd += t.isFrozen ? e.hkdAmount : (e.amount * rate);
-                });
-            });
-            document.getElementById('dash-btn-trip').innerText = `$${totalTripHkd.toFixed(1)}`;
-
-            // 6. Debt KPI
-            const payablesTotal = debtRecords.filter(r => r.kind === 'payable').reduce((sum, r) => sum + r.money, 0);
-            const receivablesTotal = debtRecords.filter(r => r.kind === 'receivable').reduce((sum, r) => sum + r.money, 0);
-            document.getElementById('dash-btn-debt').innerText = `欠:$${payablesTotal.toFixed(1)} / 收:$${receivablesTotal.toFixed(1)}`;
-
-            // Total Expense
-            document.getElementById('home-total-expense').innerText = `$${(loveCost + sportCost).toFixed(1)}`;
+        function renderFoodHistory() {
+            const listEl = document.getElementById('food-history-list');
+            if (foodPastCycles.length === 0) {
+                listEl.innerHTML = '<div style="text-align:center; color:#9ca3af; padding:20px;">暫無已封存的週期紀錄</div>';
+                return;
+            }
+            listEl.innerHTML = foodPastCycles.map(c => `
+                <div class="history-card">
+                    <div class="history-header">
+                        <span>週期 #${c.cycleId}</span>
+                        <span style="color: ${c.totalDiff >= 0 ? '#059669' : '#dc2626'};">${c.totalDiff >= 0 ? '結餘 +$' + c.totalDiff.toFixed(1) : '赤字 -$' + Math.abs(c.totalDiff).toFixed(1)}</span>
+                    </div>
+                    <div class="history-summary">
+                        <div>起始日期：${c.startDate}</div>
+                        <div>結束日期：${c.endDate}</div>
+                        <div>紀錄筆數：${c.recordCount} 筆</div>
+                    </div>
+                </div>
+            `).join('');
         }
 
-        // Export & Import Backup
+        // ==================== DATA BACKUP / RESTORE ====================
         function exportDataFile() {
-            const backupData = {
+            const data = {
+                transitCycleId, transitRecords, transitPastCycles, transitBookmarks,
+                foodCycleId, foodRecords, foodPastCycles,
                 sportRecords,
-                loveCategories,
-                loveRecords,
+                loveCategories, loveRecords,
                 trips,
-                debtRecords,
-                transitCycleId,
-                transitRecords,
-                transitPastCycles,
-                transitBookmarks,
-                foodCycleId,
-                foodRecords,
-                foodPastCycles
+                debtRecords
             };
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data, null, 2));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `Maladoukae_Backup_${new Date().toISOString().substring(0,10)}.txt`);
+            downloadAnchor.setAttribute("download", `maladoukae_backup_${new Date().toISOString().substring(0,10)}.txt`);
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();
@@ -2658,29 +2644,23 @@
             reader.onload = function(e) {
                 try {
                     const data = JSON.parse(e.target.result);
+                    if (data.transitRecords) localStorage.setItem('kmb_records_v1', JSON.stringify(data.transitRecords));
+                    if (data.foodRecords) localStorage.setItem('god_cookery_records_v2', JSON.stringify(data.foodRecords));
                     if (data.sportRecords) localStorage.setItem('sport_records_v1', JSON.stringify(data.sportRecords));
-                    if (data.loveCategories) localStorage.setItem('love_categories_v1', JSON.stringify(data.loveCategories));
                     if (data.loveRecords) localStorage.setItem('love_records_v1', JSON.stringify(data.loveRecords));
                     if (data.trips) localStorage.setItem('trips_v1', JSON.stringify(data.trips));
-                    if (data.debt_records_v2) localStorage.setItem('debt_records_v2', JSON.stringify(data.debt_records_v2));
-                    if (data.transitCycleId) localStorage.setItem('kmb_cycle_id', data.transitCycleId);
-                    if (data.transitRecords) localStorage.setItem('kmb_records_v1', JSON.stringify(data.transitRecords));
-                    if (data.transitPastCycles) localStorage.setItem('kmb_past_cycles', JSON.stringify(data.transitPastCycles));
-                    if (data.transitBookmarks) localStorage.setItem('kmb_bookmarks', JSON.stringify(data.transitBookmarks));
-                    if (data.foodCycleId) localStorage.setItem('god_cookery_cycle_id', data.foodCycleId);
-                    if (data.foodRecords) localStorage.setItem('god_cookery_records_v2', JSON.stringify(data.foodRecords));
-                    if (data.foodPastCycles) localStorage.setItem('god_cookery_past_cycles', JSON.stringify(data.foodPastCycles));
-
+                    if (data.debtRecords) localStorage.setItem('debt_records_v2', JSON.stringify(data.debtRecords));
+                    
                     alert('資料匯入成功！頁面即將重新載入。');
                     location.reload();
-                } catch(err) {
-                    alert('匯入失敗：檔案格式不正確或已損壞！');
+                } catch (err) {
+                    alert('檔案格式錯誤，無法解析備份資料！');
                 }
             };
             reader.readAsText(file);
         }
 
-        // Initial Page Render
+        // INITIAL RENDER ON LOAD
         window.onload = function() {
             renderTransit();
             renderFood();
