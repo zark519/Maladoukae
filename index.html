@@ -2618,8 +2618,29 @@
             const receivablesTotal = debtRecords.filter(r => r.kind === 'receivable').reduce((sum, r) => sum + r.money, 0);
             document.getElementById('dash-btn-debt').innerText = `欠:$${payablesTotal.toFixed(1)} / 收:$${receivablesTotal.toFixed(1)}`;
 
-            // Total Expense
-            document.getElementById('home-total-expense').innerText = `$${(loveCost + sportCost).toFixed(1)}`;
+            // --- 依照需求更新：Total Expense = 食幾多慳幾多 spending + 九巴月票 spending + 運動 spending + 錢變成喜歡的形狀 spending ---
+            // 計算食幾多慳幾多當期實際餐食總洗費 (非 diff，而是實付 cost 的總和，若要計算真實 spending 則累加 r.cost)
+            let foodSpendingTotal = 0;
+            activeFood.forEach(r => {
+                if (!r.isResetSettlement && r.cost > 0) {
+                    foodSpendingTotal += r.cost;
+                }
+            });
+
+            // 計算九巴月票實際總支出 (包含月票成本 $834 與非月票實付金額，扣除報銷 R)
+            let transitSpendingTotal = 0;
+            const activeTransitAll = transitRecords.filter(r => r.cycleId === transitCycleId);
+            activeTransitAll.forEach(r => {
+                if (r.typeCode === 'R') {
+                    transitSpendingTotal -= (r.rawPrice || 0);
+                } else {
+                    transitSpendingTotal += (r.actualPay || 0);
+                }
+            });
+
+            // 總開支 = 餐食洗費 + 交通實際支出 + 運動洗費 + 心頭好開支
+            const grandTotalExpense = foodSpendingTotal + transitSpendingTotal + sportCost + loveCost;
+            document.getElementById('home-total-expense').innerText = `$${grandTotalExpense.toFixed(1)}`;
         }
 
         // Export & Import Backup
