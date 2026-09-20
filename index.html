@@ -224,13 +224,13 @@
         <div class="month-selector-bar">
             <div class="month-selector-top">
                 <label>📅 選擇統計年份：</label>
-                <span id="current-selected-year-label" style="font-size: 0.8rem; font-weight: 700; color: var(--accent);">全部年份</span>
+                <span id="current-selected-year-label" style="font-size: 0.8rem; font-weight: 700; color: var(--accent);">2026年</span>
             </div>
             <div class="month-buttons-row">
-                <button class="month-btn year-btn active" onclick="selectDashboardYear('ALL', this)">全部</button>
+                <button class="month-btn year-btn" onclick="selectDashboardYear('ALL', this)">全部</button>
                 <button class="month-btn year-btn" onclick="selectDashboardYear('2024', this)">2024</button>
                 <button class="month-btn year-btn" onclick="selectDashboardYear('2025', this)">2025</button>
-                <button class="month-btn year-btn" onclick="selectDashboardYear('2026', this)">2026</button>
+                <button class="month-btn year-btn active" onclick="selectDashboardYear('2026', this)">2026</button>
                 <button class="month-btn year-btn" onclick="selectDashboardYear('2027', this)">2027</button>
             </div>
         </div>
@@ -239,10 +239,10 @@
         <div class="month-selector-bar">
             <div class="month-selector-top">
                 <label>📅 選擇統計月份：</label>
-                <span id="current-selected-month-label" style="font-size: 0.8rem; font-weight: 700; color: var(--accent);">全部月份</span>
+                <span id="current-selected-month-label" style="font-size: 0.8rem; font-weight: 700; color: var(--accent);">9月</span>
             </div>
             <div class="month-buttons-row" id="dashboard-month-buttons-row">
-                <button class="month-btn month-select-btn active" onclick="selectDashboardMonth('ALL', this)">全部</button>
+                <button class="month-btn month-select-btn" onclick="selectDashboardMonth('ALL', this)">全部</button>
                 <button class="month-btn month-select-btn" onclick="selectDashboardMonth('01', this)">1月</button>
                 <button class="month-btn month-select-btn" onclick="selectDashboardMonth('02', this)">2月</button>
                 <button class="month-btn month-select-btn" onclick="selectDashboardMonth('03', this)">3月</button>
@@ -251,7 +251,7 @@
                 <button class="month-btn month-select-btn" onclick="selectDashboardMonth('06', this)">6月</button>
                 <button class="month-btn month-select-btn" onclick="selectDashboardMonth('07', this)">7月</button>
                 <button class="month-btn month-select-btn" onclick="selectDashboardMonth('08', this)">8月</button>
-                <button class="month-btn month-select-btn" onclick="selectDashboardMonth('09', this)">9月</button>
+                <button class="month-btn month-select-btn active" onclick="selectDashboardMonth('09', this)">9月</button>
                 <button class="month-btn month-select-btn" onclick="selectDashboardMonth('10', this)">10月</button>
                 <button class="month-btn month-select-btn" onclick="selectDashboardMonth('11', this)">11月</button>
                 <button class="month-btn month-select-btn" onclick="selectDashboardMonth('12', this)">12月</button>
@@ -989,8 +989,9 @@
         }
 
         // ==================== DASHBOARD YEAR & MONTH SELECTION & OVERVIEW ====================
-        let currentDashboardYear = 'ALL';
-        let currentDashboardMonth = 'ALL';
+        // 預設設定為當前系統日期：2026年9月
+        let currentDashboardYear = '2026';
+        let currentDashboardMonth = '09';
 
         function selectDashboardYear(yearVal, btnEl) {
             currentDashboardYear = yearVal;
