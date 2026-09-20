@@ -21,14 +21,13 @@
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
         body { background-color: var(--bg); color: var(--text); padding: 16px; max-width: 500px; margin: 0 auto; }
         
-        /* Top Bar Date Display */
-        .top-bar-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        /* Bottom Left Date Display */
+        .bottom-bar-info { margin-top: 20px; display: flex; justify-content: flex-start; align-items: center; }
         .current-date-badge { font-size: 0.78rem; font-weight: 700; color: var(--primary); background: #e5e7eb; padding: 4px 10px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
 
         /* Main Dashboard Navigation */
         .dash-header { text-align: center; margin-bottom: 16px; }
         .dash-header h1 { color: var(--primary); font-size: 1.6rem; font-weight: 800; }
-        .dash-header p { font-size: 0.85rem; color: #6b7280; margin-top: 4px; }
 
         /* Month / Year Selector Bar */
         .month-selector-bar { background: white; padding: 12px 16px; border-radius: 14px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
@@ -54,7 +53,6 @@
         .app-card:active { transform: scale(0.97); }
         .app-icon { font-size: 2.2rem; margin-bottom: 6px; }
         .app-title { font-weight: 700; font-size: 0.95rem; color: var(--primary); }
-        .app-sub { font-size: 0.7rem; color: #6b7280; margin-top: 3px; }
         .app-kpi-badge { margin-top: 8px; background: #f3f4f6; padding: 4px 8px; border-radius: 8px; font-size: 0.75rem; font-weight: 800; color: var(--primary); display: inline-block; }
 
         .app-grid-full { margin-bottom: 12px; }
@@ -209,15 +207,8 @@
 
     <!-- ==================== MAIN DASHBOARD VIEW ==================== -->
     <div id="view-dashboard" class="view active">
-        <!-- Top Bar with Current Date Display on the Left -->
-        <div class="top-bar-info">
-            <div id="current-date-display" class="current-date-badge">📅 載入中...</div>
-            <div style="width: 10px;"></div>
-        </div>
-
         <div class="dash-header">
             <h1>📱 Málàdöükæ</h1>
-            <p>即時掌握當前實際總開支與消費狀況</p>
         </div>
 
         <!-- Year Selector Bar -->
@@ -269,13 +260,11 @@
             <div class="app-card" onclick="switchView('food')">
                 <div class="app-icon">🍱</div>
                 <div class="app-title">食幾多慳幾多</div>
-                <div class="app-sub">日常飲食管理</div>
                 <div class="app-kpi-badge" id="dash-btn-food">$0 (0筆)</div>
             </div>
             <div class="app-card" onclick="switchView('transit')">
                 <div class="app-icon">🚌</div>
                 <div class="app-title">九巴月票慳慳慳</div>
-                <div class="app-sub">九巴/機場線</div>
                 <div class="app-kpi-badge" id="dash-btn-transit">$834</div>
             </div>
         </div>
@@ -283,13 +272,11 @@
             <div class="app-card" onclick="switchView('sport')">
                 <div class="app-icon">🏃‍♂️</div>
                 <div class="app-title">運動燃燒脂肪及金錢</div>
-                <div class="app-sub">月曆檢視</div>
                 <div class="app-kpi-badge" id="dash-btn-sport">$0 (0次)</div>
             </div>
             <div class="app-card" onclick="switchView('love')">
                 <div class="app-icon">💖</div>
                 <div class="app-title">錢變成喜歡的形狀</div>
-                <div class="app-sub">心頭好開支</div>
                 <div class="app-kpi-badge" id="dash-btn-love">$0 (0筆)</div>
             </div>
         </div>
@@ -299,7 +286,6 @@
                     <div class="app-icon" style="font-size: 2rem; margin-bottom:0;">✈️</div>
                     <div style="text-align: left;">
                         <div class="app-title">來都來了啱就買啦</div>
-                        <div class="app-sub">多幣別旅遊、匯率換算</div>
                     </div>
                 </div>
                 <div class="app-kpi-badge" id="dash-btn-trip">$0</div>
@@ -311,7 +297,6 @@
                     <div class="app-icon" style="font-size: 2rem; margin-bottom:0;">💸</div>
                     <div style="text-align: left;">
                         <div class="app-title">欠債還錢天經地義</div>
-                        <div class="app-sub">應收款與應付款管理</div>
                     </div>
                 </div>
                 <div class="app-kpi-badge" id="dash-btn-debt">$0</div>
@@ -323,6 +308,11 @@
             <button class="backup-btn" onclick="exportDataFile()">💾 匯出紀錄 (.txt)</button>
             <button class="backup-btn" onclick="triggerImportFile()">📂 匯入紀錄 (.txt)</button>
             <input type="file" id="import-file-input" style="display: none;" accept=".txt,.json" onchange="importDataFile(event)">
+        </div>
+
+        <!-- Bottom Left Date Display -->
+        <div class="bottom-bar-info">
+            <div id="current-date-display" class="current-date-badge">📅 載入中...</div>
         </div>
     </div>
 
@@ -989,7 +979,6 @@
         }
 
         // ==================== DASHBOARD YEAR & MONTH SELECTION & OVERVIEW ====================
-        // 預設設定為當前系統日期：2026年9月
         let currentDashboardYear = '2026';
         let currentDashboardMonth = '09';
 
