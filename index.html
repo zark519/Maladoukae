@@ -26,7 +26,7 @@
         .dash-header h1 { color: var(--primary); font-size: 1.6rem; font-weight: 800; }
         .dash-header p { font-size: 0.85rem; color: #6b7280; margin-top: 4px; }
 
-        /* Month Selector Bar */
+        /* Month / Year Selector Bar */
         .month-selector-bar { background: white; padding: 12px 16px; border-radius: 14px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .month-selector-top { display: flex; align-items: center; justify-content: space-between; }
         .month-selector-bar label { font-size: 0.88rem; font-weight: 700; color: var(--primary); }
@@ -210,6 +210,21 @@
             <p>即時掌握當前實際總開支與消費狀況</p>
         </div>
 
+        <!-- Year Selector Bar -->
+        <div class="month-selector-bar">
+            <div class="month-selector-top">
+                <label>📅 選擇統計年份：</label>
+                <span id="current-selected-year-label" style="font-size: 0.8rem; font-weight: 700; color: var(--accent);">全部年份</span>
+            </div>
+            <div class="month-buttons-row">
+                <button class="month-btn year-btn active" onclick="selectDashboardYear('ALL', this)">全部</button>
+                <button class="month-btn year-btn" onclick="selectDashboardYear('2024', this)">2024</button>
+                <button class="month-btn year-btn" onclick="selectDashboardYear('2025', this)">2025</button>
+                <button class="month-btn year-btn" onclick="selectDashboardYear('2026', this)">2026</button>
+                <button class="month-btn year-btn" onclick="selectDashboardYear('2027', this)">2027</button>
+            </div>
+        </div>
+
         <!-- Month Selector Bar (Buttons 1-12 & All) -->
         <div class="month-selector-bar">
             <div class="month-selector-top">
@@ -235,7 +250,7 @@
 
         <!-- Total Expense Summary Card -->
         <div class="dash-total-card">
-            <div class="dash-total-title" id="dash-total-title-text">💰 選擇月份總開支 (Total Expense)</div>
+            <div class="dash-total-title" id="dash-total-title-text">💰 選擇年份與月份總開支 (Total Expense)</div>
             <div class="dash-total-value" id="home-total-expense">$0.0</div>
         </div>
 
@@ -964,12 +979,28 @@
             if (viewName === 'sport') renderSportCalendar();
         }
 
-        // ==================== DASHBOARD MONTH SELECTION & OVERVIEW ====================
+        // ==================== DASHBOARD YEAR & MONTH SELECTION & OVERVIEW ====================
+        let currentDashboardYear = 'ALL';
         let currentDashboardMonth = 'ALL';
+
+        function selectDashboardYear(yearVal, btnEl) {
+            currentDashboardYear = yearVal;
+            document.querySelectorAll('.year-btn').forEach(b => {
+                b.classList.remove('active');
+            });
+            btnEl.classList.add('active');
+            
+            const labelEl = document.getElementById('current-selected-year-label');
+            if (labelEl) {
+                labelEl.innerText = yearVal === 'ALL' ? '全部年份' : `${yearVal}年`;
+            }
+            updateDashboardOverview();
+        }
 
         function selectDashboardMonth(monthVal, btnEl) {
             currentDashboardMonth = monthVal;
-            document.querySelectorAll('.month-btn').forEach(b => {
+            // Only toggle active for non-year buttons (month buttons)
+            document.querySelectorAll('.month-selector-bar:nth-of-type(2) .month-btn').forEach(b => {
                 b.classList.remove('active');
             });
             btnEl.classList.add('active');
@@ -981,31 +1012,35 @@
             updateDashboardOverview();
         }
 
-        function matchSelectedMonth(dateStr) {
-            if (currentDashboardMonth === 'ALL') return true;
+        function matchSelectedDate(dateStr) {
             if (!dateStr) return false;
             const parts = dateStr.split('-');
-            if (parts.length >= 2) {
-                return parts[1] === currentDashboardMonth;
-            }
-            return false;
+            if (parts.length < 2) return false;
+            
+            const yearPart = parts[0];
+            const monthPart = parts[1];
+
+            const yearMatch = (currentDashboardYear === 'ALL' || yearPart === currentDashboardYear);
+            const monthMatch = (currentDashboardMonth === 'ALL' || monthPart === currentDashboardMonth);
+
+            return yearMatch && monthMatch;
         }
 
         function updateDashboardOverview() {
             // 1. 計算日常飲食開支 (Food Cost)
             let foodTotal = 0;
             foodRecords.forEach(r => {
-                if (matchSelectedMonth(r.date)) {
+                if (matchSelectedDate(r.date)) {
                     foodTotal += (r.cost || 0);
                 }
             });
-            const foodCount = foodRecords.filter(r => matchSelectedMonth(r.date)).length;
+            const foodCount = foodRecords.filter(r => matchSelectedDate(r.date)).length;
             document.getElementById('dash-btn-food').innerText = `$${foodTotal.toFixed(0)} (${foodCount}筆)`;
 
             // 2. 計算九巴月票與交通實際支出 (Transit Cost)
             let transitTotal = 0;
             transitRecords.forEach(r => {
-                if (matchSelectedMonth(r.date)) {
+                if (matchSelectedDate(r.date)) {
                     if (r.typeCode === 'R') {
                         transitTotal -= (r.rawPrice || 0);
                     } else {
@@ -1018,26 +1053,26 @@
             // 3. 計算運動洗費 (Sport Cost)
             let sportTotal = 0;
             sportRecords.forEach(r => {
-                if (matchSelectedMonth(r.date)) {
+                if (matchSelectedDate(r.date)) {
                     sportTotal += (r.cost || 0);
                 }
             });
-            document.getElementById('dash-btn-sport').innerText = `$${sportTotal.toFixed(0)} (${sportRecords.filter(r => matchSelectedMonth(r.date)).length}次)`;
+            document.getElementById('dash-btn-sport').innerText = `$${sportTotal.toFixed(0)} (${sportRecords.filter(r => matchSelectedDate(r.date)).length}次)`;
 
             // 4. 計算心頭好開支 (Love Cost)
             let loveTotal = 0;
             loveRecords.forEach(r => {
-                if (matchSelectedMonth(r.date)) {
+                if (matchSelectedDate(r.date)) {
                     loveTotal += (r.money || 0);
                 }
             });
-            document.getElementById('dash-btn-love').innerText = `$${loveTotal.toFixed(0)} (${loveRecords.filter(r => matchSelectedMonth(r.date)).length}筆)`;
+            document.getElementById('dash-btn-love').innerText = `$${loveTotal.toFixed(0)} (${loveRecords.filter(r => matchSelectedDate(r.date)).length}筆)`;
 
-            // 5. 計算旅遊洗費 (Trip Cost - 保留於卡片顯示，但已從總開支中剔除)
+            // 5. 計算旅遊洗費 (Trip Cost)
             let tripTotal = 0;
             trips.forEach(t => {
                 t.expenses.forEach(e => {
-                    if (matchSelectedMonth(e.date)) {
+                    if (matchSelectedDate(e.date)) {
                         const rate = t.exchangeTable[e.currency] || e.rateUsed || 1.0;
                         tripTotal += t.isFrozen ? (e.hkdAmount || 0) : (e.amount * rate);
                     }
@@ -1045,14 +1080,14 @@
             });
             document.getElementById('dash-btn-trip').innerText = `$${tripTotal.toFixed(0)}`;
 
-            // 6. 應付款與應收款統計 (Debt)
+            // 6. 應付款統計 (Debt)
             let payableTotal = 0;
-            debtRecords.filter(r => r.kind === 'payable' && matchSelectedMonth(r.date)).forEach(r => {
+            debtRecords.filter(r => r.kind === 'payable' && matchSelectedDate(r.date)).forEach(r => {
                 payableTotal += (r.money || 0);
             });
             document.getElementById('dash-btn-debt').innerText = `$${payableTotal.toFixed(0)}`;
 
-            // 7. 總開支計算合成 (總開支 = 日常飲食 + 九巴月票/交通 + 運動洗費 + 心頭好，已拎走旅遊開支)[cite: 3]
+            // 7. 總開支計算合成
             const grandTotalExpense = foodTotal + transitTotal + sportTotal + loveTotal;
             document.getElementById('home-total-expense').innerText = `$${grandTotalExpense.toFixed(1)}`;
         }
