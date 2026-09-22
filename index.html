@@ -398,7 +398,7 @@
 
         <div class="list-header">
             <div class="list-title">當前週期消費紀錄</div>
-            <div class="cycle-badge" id="food-cycle-id">週期 #1</div>
+            <div class="cycle-badge" id="food-cycle-id">週期 (星期一至日)</div>
         </div>
         <div id="food-records-list"></div>
     </div>
@@ -557,7 +557,7 @@
                 <label>日期</label>
                 <input type="date" id="edit-food-date" class="form-control">
             </div>
-            <div class="form-group">
+            <div class="form-group" id="edit-food-type-group">
                 <label>餐點類型</label>
                 <select id="edit-food-type" class="form-control">
                     <option value="豪華大餐">豪華大餐 ($200)</option>
@@ -565,11 +565,11 @@
                 </select>
             </div>
             <div class="form-group">
-                <label>食咗啲咩</label>
+                <label>食咗啲咩 / 備註</label>
                 <input type="text" id="edit-food-name" class="form-control">
             </div>
             <div class="form-group">
-                <label>食咗幾多錢 ($)</label>
+                <label id="edit-food-cost-label">食咗幾多錢 ($)</label>
                 <input type="number" id="edit-food-cost" class="form-control" step="0.1">
             </div>
             <div class="modal-actions">
@@ -937,12 +937,12 @@
         <div class="modal-content">
             <h2 style="font-size: 1.2rem; margin-bottom: 16px; text-align: center;">新增餐食記錄</h2>
             <div class="form-group">
-                <label>選擇記錄月份 / 日期</label>
+                <label>選擇查看 / 記帳之星期週期</label>
                 <div style="display: flex; gap: 8px; margin-bottom: 8px;">
                     <select id="food-cycle-jump" class="form-control" style="flex: 1;" onchange="onFoodCycleJumpChange()">
                     </select>
                 </div>
-                <input type="date" id="food-input-date" class="form-control">
+                <input type="date" id="food-input-date" class="form-control" onchange="onFoodDateChange(this.value)">
             </div>
             <div class="form-group">
                 <label>餐點類型</label>
@@ -969,7 +969,7 @@
     <!-- Food History Modal -->
     <div class="modal" id="food-history-modal">
         <div class="modal-content">
-            <h2 style="font-size: 1.2rem; margin-bottom: 16px; text-align: center;">📜 歷屆食幾多慳幾多週期紀錄</h2>
+            <h2 style="font-size: 1.2rem; margin-bottom: 16px; text-align: center;">📜 歷屆飲食週期紀錄 (星期一至日)</h2>
             <div id="food-history-list"></div>
             <div style="margin-top: 16px;">
                 <button class="btn-cancel" style="width: 100%;" onclick="closeFoodHistoryModal()">關閉</button>
@@ -1998,445 +1998,44 @@
         }
 
 
-        // ==================== FOOD EDIT MODAL ====================
-        function openEditFoodModal(id) {
-            const r = foodRecords.find(item => item.id === id);
-            if (!r) return;
-            document.getElementById('edit-food-id').value = r.id;
-            document.getElementById('edit-food-date').value = r.date;
-            document.getElementById('edit-food-type').value = r.type;
-            document.getElementById('edit-food-name').value = r.name;
-            document.getElementById('edit-food-cost').value = r.cost;
-            document.getElementById('edit-food-modal').classList.add('active');
-        }
-
-        function closeEditFoodModal() {
-            document.getElementById('edit-food-modal').classList.remove('active');
-        }
-
-        function updateFoodRecord() {
-            const id = parseInt(document.getElementById('edit-food-id').value);
-            const dateVal = document.getElementById('edit-food-date').value;
-            const typeVal = document.getElementById('edit-food-type').value;
-            const nameVal = document.getElementById('edit-food-name').value.trim();
-            const costVal = parseFloat(document.getElementById('edit-food-cost').value);
-
-            if (!dateVal || !nameVal || isNaN(costVal)) {
-                alert('請完整填寫日期、餐點名稱與金額！');
-                return;
-            }
-
-            const budget = typeVal === '豪華大餐' ? 200 : 100;
-            const diff = budget - costVal;
-
-            const idx = foodRecords.findIndex(item => item.id === id);
-            if (idx !== -1) {
-                foodRecords[idx].date = dateVal;
-                foodRecords[idx].type = typeVal;
-                foodRecords[idx].name = nameVal;
-                foodRecords[idx].cost = costVal;
-                foodRecords[idx].budget = budget;
-                foodRecords[idx].diff = diff;
-
-                localStorage.setItem('god_cookery_records_v2', JSON.stringify(foodRecords));
-            }
-
-            closeEditFoodModal();
-            renderFood();
-            updateDashboardOverview();
-        }
-
-
-        // ==================== DEFAULT BOOKMARKS ====================
-        const DEFAULT_BOOKMARKS = [
-            { id: 1, name: '968 (元朗 - 銅鑼灣)', rawPrice: 25.7, typeCode: 'A' },
-            { id: 2, name: '268C (朗屏 - 觀塘)', rawPrice: 20.1, typeCode: 'A' },
-            { id: 3, name: '68M (元朗 - 荃灣)', rawPrice: 11.1, typeCode: 'A' },
-            { id: 4, name: 'A31 (荃灣 - 機場)', rawPrice: 19.8, typeCode: 'B' },
-            { id: 5, name: '政府公共交通費用補貼', rawPrice: 120.0, typeCode: 'R' }
-        ];
-
-        let transitBookmarks = JSON.parse(localStorage.getItem('kmb_bookmarks') || JSON.stringify(DEFAULT_BOOKMARKS));
-
-        function populateBookmarkDropdown() {
-            const bmSelect = document.getElementById('transit-select-bookmark');
-            if (!bmSelect) return;
-            bmSelect.innerHTML = '<option value="">-- 手動輸入全新路線 / 津貼 --</option>';
-            transitBookmarks.forEach(bm => {
-                bmSelect.innerHTML += `<option value="${encodeURIComponent(JSON.stringify(bm))}">${bm.name} ($${bm.rawPrice.toFixed(1)})</option>`;
-            });
-        }
-
-        function fillFromBookmark() {
-            const bmSelect = document.getElementById('transit-select-bookmark');
-            if (!bmSelect || !bmSelect.value) return;
-            try {
-                const bm = JSON.parse(decodeURIComponent(bmSelect.value));
-                document.getElementById('transit-input-name').value = bm.name;
-                document.getElementById('transit-input-price').value = bm.rawPrice;
-                document.getElementById('transit-manual-type').value = bm.typeCode || 'A';
-                calculateTransitSavingsPreview();
-            } catch(e) {}
-        }
-
-        function openCreateBookmarkModal() {
-            renderBookmarkManageList();
-            document.getElementById('create-bookmark-modal').classList.add('active');
-        }
-
-        function closeCreateBookmarkModal() {
-            document.getElementById('create-bookmark-modal').classList.remove('active');
-            populateBookmarkDropdown();
-        }
-
-        function saveNewBookmark() {
-            const nameVal = document.getElementById('bm-input-name').value.trim();
-            const typeVal = document.getElementById('bm-input-type').value;
-            const priceVal = parseFloat(document.getElementById('bm-input-price').value);
-
-            if (!nameVal || isNaN(priceVal)) {
-                alert('請填寫完整書籤名稱與金額！');
-                return;
-            }
-
-            const newBm = { id: Date.now(), name: nameVal, typeCode: typeVal, rawPrice: priceVal };
-            transitBookmarks.push(newBm);
-            localStorage.setItem('kmb_bookmarks', JSON.stringify(transitBookmarks));
-
-            document.getElementById('bm-input-name').value = '';
-            document.getElementById('bm-input-price').value = '';
-            renderBookmarkManageList();
-            populateBookmarkDropdown();
-            alert('成功新增常用書籤！');
-        }
-
-        function deleteBookmark(bmId) {
-            transitBookmarks = transitBookmarks.filter(b => b.id !== bmId);
-            localStorage.setItem('kmb_bookmarks', JSON.stringify(transitBookmarks));
-            renderBookmarkManageList();
-            populateBookmarkDropdown();
-        }
-
-        function renderBookmarkManageList() {
-            const listEl = document.getElementById('bookmark-manage-list');
-            if (!listEl) return;
-            if (transitBookmarks.length === 0) {
-                listEl.innerHTML = '<div style="color:#9ca3af; font-size:0.8rem; text-align:center;">目前無任何書籤</div>';
-                return;
-            }
-            listEl.innerHTML = transitBookmarks.map(bm => `
-                <div class="bookmark-item">
-                    <span style="font-size: 0.82rem; font-weight:600;">${bm.name} ($${bm.rawPrice.toFixed(1)})</span>
-                    <button type="button" class="bookmark-del-btn" onclick="deleteBookmark(${bm.id})">刪除</button>
-                </div>
-            `).join('');
-        }
-
-        function calculateTransitSavingsPreview() {
-            let rawPrice = parseFloat(document.getElementById('transit-input-price').value) || 0;
-            let category = document.getElementById('transit-manual-type').value;
-            let actualPay = 0;
-            let saved = 0;
-
-            if (category === 'A') { actualPay = 0; saved = rawPrice; }
-            else if (category === 'B') { actualPay = Math.round(rawPrice * 0.27 * 10) / 10; saved = Math.round((rawPrice - actualPay) * 10) / 10; }
-            else if (category === 'C') { actualPay = rawPrice; saved = 0; }
-            else if (category === 'R') { actualPay = -rawPrice; saved = 0; }
-
-            document.getElementById('preview-raw').innerText = category === 'R' ? `+$${rawPrice.toFixed(1)}` : `$${rawPrice.toFixed(1)}`;
-            document.getElementById('preview-pay').innerText = category === 'R' ? `-$${rawPrice.toFixed(1)} (扣減花費)` : `$${actualPay.toFixed(1)}`;
-            document.getElementById('preview-saved').innerText = category === 'R' ? `$0.0 (不計入慳錢額)` : `$${saved.toFixed(1)}`;
-        }
-
-
-        // ==================== TRANSIT LOGIC ====================
-        let transitCycleId = parseInt(localStorage.getItem('kmb_cycle_id') || '1');
-        let transitRecords = JSON.parse(localStorage.getItem('kmb_records_v1') || '[]');
-        let transitPastCycles = JSON.parse(localStorage.getItem('kmb_past_cycles') || '[]');
-
-        function ensureFirstCycleTransitPassRecord() {
-            const cycleRecords = transitRecords.filter(r => r.cycleId === 1);
-            const hasPass = cycleRecords.some(r => r.isPassPurchase);
-            if (!hasPass) {
-                let creationDate = new Date().toISOString().substring(0, 10);
-                if (cycleRecords.length > 0) {
-                    const sorted = [...cycleRecords].sort((a,b) => a.date.localeCompare(b.date));
-                    creationDate = sorted[0].date;
-                }
-                const passRecord = {
-                    id: 1000000000001,
-                    cycleId: 1,
-                    date: creationDate,
-                    typeCode: 'C',
-                    typeLabel: '月票購買',
-                    name: '九巴月票 #1 購買開支',
-                    rawPrice: 834,
-                    actualPay: 834,
-                    saved: 0,
-                    isPassPurchase: true
-                };
-                transitRecords.push(passRecord);
-                localStorage.setItem('kmb_records_v1', JSON.stringify(transitRecords));
-            }
-        }
-        ensureFirstCycleTransitPassRecord();
-
-        function populateTransitCycleJump() {
-            const selectEl = document.getElementById('transit-cycle-jump');
-            if (!selectEl) return;
-            let html = '';
-            for (let i = 1; i <= transitCycleId; i++) {
-                html += `<option value="${i}">跳至：九巴月票週期 #${i}</option>`;
-            }
-            selectEl.innerHTML = html;
-            selectEl.value = transitCycleId;
-        }
-
-        function onTransitCycleJumpChange() {
-            const selectEl = document.getElementById('transit-cycle-jump');
-            if (!selectEl) return;
-            const targetCycle = parseInt(selectEl.value);
-            if (!isNaN(targetCycle)) {
-                transitCycleId = targetCycle;
-                localStorage.setItem('kmb_cycle_id', transitCycleId.toString());
-                renderTransit();
-            }
-        }
-
-        function openTransitModal() {
-            populateTransitCycleJump();
-            document.getElementById('transit-input-date').valueAsDate = new Date();
-            populateBookmarkDropdown();
-            document.getElementById('transit-modal').classList.add('active');
-            calculateTransitSavingsPreview();
-        }
-
-        function closeTransitModal() {
-            document.getElementById('transit-modal').classList.remove('active');
-        }
-
-        function openTransitHistoryModal() {
-            renderTransitHistory();
-            document.getElementById('transit-history-modal').classList.add('active');
-        }
-
-        function closeTransitHistoryModal() {
-            document.getElementById('transit-history-modal').classList.remove('active');
-        }
-
-        function saveTransitRecord() {
-            const dateVal = document.getElementById('transit-input-date').value;
-            const nameVal = document.getElementById('transit-input-name').value.trim() || '搭車 / 補貼';
-            const rawPrice = parseFloat(document.getElementById('transit-input-price').value);
-            const typeCode = document.getElementById('transit-manual-type').value;
-
-            if (!dateVal || isNaN(rawPrice)) {
-                alert('請填寫日期與正確的金額！');
-                return;
-            }
-
-            let actualPay = 0;
-            let saved = 0;
-            let typeLabel = '';
-
-            if (typeCode === 'A') { actualPay = 0; saved = rawPrice; typeLabel = '九巴'; }
-            else if (typeCode === 'B') { actualPay = Math.round(rawPrice * 0.27 * 10) / 10; saved = Math.round((rawPrice - actualPay) * 10) / 10; typeLabel = '機場線 (27折)'; }
-            else if (typeCode === 'C') { actualPay = rawPrice; saved = 0; typeLabel = '其他交通'; }
-            else if (typeCode === 'R') { actualPay = -rawPrice; saved = 0; typeLabel = '政府補貼/報銷'; }
-
-            const newRecord = {
-                id: Date.now(),
-                cycleId: transitCycleId,
-                date: dateVal,
-                typeCode: typeCode,
-                typeLabel: typeLabel,
-                name: nameVal,
-                rawPrice: rawPrice,
-                actualPay: actualPay,
-                saved: saved
-            };
-
-            transitRecords.unshift(newRecord);
-            localStorage.setItem('kmb_records_v1', JSON.stringify(transitRecords));
-
-            document.getElementById('transit-input-name').value = '';
-            document.getElementById('transit-input-price').value = '';
-            closeTransitModal();
-            renderTransit();
-            updateDashboardOverview();
-        }
-
-        function deleteLastTransitStep() {
-            const activeIndex = transitRecords.findIndex(r => r.cycleId === transitCycleId && !r.isPassPurchase);
-            if (activeIndex === -1) {
-                alert('本期月票沒有可刪除的非月票記錄！');
-                return;
-            }
-            const lastRecord = transitRecords[activeIndex];
-            if (confirm(`確定要刪除最近輸入的記錄嗎？\n\n📌 「${lastRecord.name}」`)) {
-                transitRecords.splice(activeIndex, 1);
-                localStorage.setItem('kmb_records_v1', JSON.stringify(transitRecords));
-                renderTransit();
-                updateDashboardOverview();
-            }
-        }
-
-        function deleteTransitRecordDirect(id) {
-            const r = transitRecords.find(item => item.id === id);
-            if (r && r.isPassPurchase) {
-                alert('月票購買記錄不可直接刪除，但您可以透過編輯修改金額或日期！');
-                return;
-            }
-            if (confirm('確定要刪除這筆交通記錄嗎？')) {
-                transitRecords = transitRecords.filter(item => item.id !== id);
-                localStorage.setItem('kmb_records_v1', JSON.stringify(transitRecords));
-                renderTransit();
-                updateDashboardOverview();
-            }
-        }
-
-        function confirmResetTransitCycle() {
-            const activeRecords = transitRecords.filter(r => r.cycleId === transitCycleId);
-            if (confirm('確定要開啟新一期月票嗎？當前期的紀錄將會完整存檔至記錄。')) {
-                const nonPassRecords = activeRecords.filter(r => !r.isPassPurchase);
-                const totalSaved = nonPassRecords.reduce((sum, r) => sum + r.saved, 0);
-                const netGain = totalSaved - 834;
-
-                const cycleSummary = {
-                    cycleId: transitCycleId,
-                    startDate: activeRecords.length > 0 ? activeRecords[activeRecords.length - 1].date : '無紀錄',
-                    endDate: activeRecords.length > 0 ? activeRecords[0].date : '無紀錄',
-                    totalSaved: totalSaved,
-                    netGain: netGain,
-                    recordCount: nonPassRecords.length
-                };
-
-                transitPastCycles.unshift(cycleSummary);
-                localStorage.setItem('kmb_past_cycles', JSON.stringify(transitPastCycles));
-
-                transitCycleId += 1;
-                localStorage.setItem('kmb_cycle_id', transitCycleId.toString());
-
-                const todayStr = new Date().toISOString().substring(0, 10);
-                const newPassRecord = {
-                    id: Date.now(),
-                    cycleId: transitCycleId,
-                    date: todayStr,
-                    typeCode: 'C',
-                    typeLabel: '月票購買',
-                    name: `九巴月票 #${transitCycleId} 購買開支`,
-                    rawPrice: 834,
-                    actualPay: 834,
-                    saved: 0,
-                    isPassPurchase: true
-                };
-                transitRecords.unshift(newPassRecord);
-                localStorage.setItem('kmb_records_v1', JSON.stringify(transitRecords));
-
-                renderTransit();
-                updateDashboardOverview();
-                alert(`已成功開啟第 #${transitCycleId} 期九巴月票，並自動記錄 $834 月票購買洗費！`);
-            }
-        }
-
-        function renderTransit() {
-            document.getElementById('transit-cycle-id').innerText = `月票期數 #${transitCycleId}`;
-            const activeRecords = transitRecords.filter(r => r.cycleId === transitCycleId);
-
-            const nonPassRecords = activeRecords.filter(r => !r.isPassPurchase);
-            const totalSaved = nonPassRecords.reduce((sum, r) => sum + r.saved, 0);
-            const netGain = totalSaved - 834;
-
-            document.getElementById('kmb-total-saved').innerText = `$${totalSaved.toFixed(1)}`;
-            
-            const netStatusEl = document.getElementById('kmb-net-status');
-            if (netGain >= 0) {
-                netStatusEl.innerText = `淨賺 +$${netGain.toFixed(1)}`;
-                netStatusEl.style.color = '#059669';
-            } else {
-                netStatusEl.innerText = `差 $${Math.abs(netGain).toFixed(1)} 回本`;
-                netStatusEl.style.color = '#d90429';
-            }
-
-            const listEl = document.getElementById('transit-records-list');
-            if (activeRecords.length === 0) {
-                listEl.innerHTML = '<div style="text-align:center; color:#9ca3af; padding:20px;">本期月票暫無紀錄</div>';
-                return;
-            }
-
-            listEl.innerHTML = activeRecords.map(r => {
-                let badgeClass = 'badge-kmb';
-                if (r.typeCode === 'B') badgeClass = 'badge-airport';
-                if (r.typeCode === 'C') badgeClass = 'badge-other';
-                if (r.typeCode === 'R') badgeClass = 'badge-reimburse';
-                if (r.isPassPurchase) badgeClass = 'badge-luxury';
-
-                let payText = `實付 $${r.actualPay.toFixed(1)}`;
-                let diffText = r.saved > 0 ? '慳了 +$' + r.saved.toFixed(1) : '無省額';
-
-                if (r.typeCode === 'R') {
-                    payText = `補貼 +$${r.rawPrice.toFixed(1)}`;
-                    diffText = '已扣減總開支';
-                }
-                if (r.isPassPurchase) {
-                    payText = `月票成本 $${r.actualPay.toFixed(1)}`;
-                    diffText = '固定月票支出';
-                }
-
-                return `
-                <div class="record-card">
-                    <div class="record-info">
-                        <div>
-                            <span class="badge ${badgeClass}">${r.typeLabel}</span>
-                            ${r.name}
-                        </div>
-                        <div>${r.date} ${r.typeCode === 'R' || r.isPassPurchase ? '' : '(原價 $' + r.rawPrice.toFixed(1) + ')'}</div>
-                    </div>
-                    <div class="record-amount">
-                        <div class="record-cost" style="color: ${r.typeCode === 'R' ? '#059669' : 'inherit'};">${payText}</div>
-                        <div class="record-diff ${r.saved > 0 || r.typeCode === 'R' ? 'surplus' : ''}">
-                            ${diffText}
-                        </div>
-                        <div style="margin-top: 4px;">
-                            <button class="btn-edit-item" onclick="openEditTransitModal(${r.id})">編輯</button>
-                            ${!r.isPassPurchase ? `<button class="bookmark-del-btn" onclick="deleteTransitRecordDirect(${r.id})">刪除</button>` : ''}
-                        </div>
-                    </div>
-                </div>
-                `;
-            }).join('');
-        }
-
-        function renderTransitHistory() {
-            const listEl = document.getElementById('transit-history-list');
-            if (transitPastCycles.length === 0) {
-                listEl.innerHTML = '<div style="text-align:center; color:#9ca3af; padding:20px;">暫無已封存的月票紀錄</div>';
-                return;
-            }
-            listEl.innerHTML = transitPastCycles.map(c => `
-                <div class="history-card">
-                    <div class="history-header">
-                        <span>月票期數 #${c.cycleId}</span>
-                        <span style="color: ${c.netGain >= 0 ? '#059669' : '#d90429'};">${c.netGain >= 0 ? '淨賺 +$' + c.netGain.toFixed(1) : '差 $' + Math.abs(c.netGain).toFixed(1) + '回本'}</span>
-                    </div>
-                    <div class="history-summary">
-                        <div>起始日期：${c.startDate}</div>
-                        <div>結束日期：${c.endDate}</div>
-                        <div>總慳錢額：$${c.totalSaved.toFixed(1)}</div>
-                        <div>紀錄筆數：${c.recordCount} 筆</div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-
-        // ==================== FOOD MODULE LOGIC ====================
-        let foodCycleId = parseInt(localStorage.getItem('god_cookery_cycle_id') || '1');
+        // ==================== FOOD WEEKLY & EDIT LOGIC ====================
         let foodRecords = JSON.parse(localStorage.getItem('god_cookery_records_v2') || '[]');
-        let foodPastCycles = JSON.parse(localStorage.getItem('god_cookery_past_cycles') || '[]');
         let currentSelectedFoodType = '豪華大餐';
+        // 當前選中的星期一日期字串 (YYYY-MM-DD)，作為當前檢視的週期識別
+        let currentFoodWeekStart = getMondayStr(new Date());
 
-        // 歷史記錄去重：保留最新嘅一個
+        // 取得指定日期所在星期的星期一日期字串 (YYYY-MM-DD)
+        function getMondayStr(dInput) {
+            const d = new Date(dInput);
+            const day = d.getDay();
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1); // 調整當日為星期一
+            const monday = new Date(d.setDate(diff));
+            return monday.toISOString().substring(0, 10);
+        }
+
+        // 取得指定日期所在星期的星期日日期字串 (YYYY-MM-DD)
+        function getSundayStr(mondayStr) {
+            const monday = new Date(mondayStr);
+            const sunday = new Date(monday);
+            sunday.setDate(monday.getDate() + 6);
+            return sunday.toISOString().substring(0, 10);
+        }
+
+        // 格式化日期為 DD/M/YYYY 或 DD/MM/YYYY
+        function formatDateToDMY(dateStr) {
+            if (!dateStr) return '';
+            const parts = dateStr.split('-');
+            if (parts.length !== 3) return dateStr;
+            return `${parseInt(parts[2])}/${parseInt(parts[1])}/${parts[0]}`;
+        }
+
+        // 根據日期計算屬於哪個星期週期 (返回星期一字串)
+        function getWeekKey(dateStr) {
+            if (!dateStr) return getMondayStr(new Date());
+            return getMondayStr(new Date(dateStr));
+        }
+
+        // 去重記錄 (只保留最新一個)
         function getUniqueFoodRecords() {
             const seen = new Set();
             const unique = [];
@@ -2453,38 +2052,49 @@
             const selectEl = document.getElementById('food-cycle-jump');
             if (!selectEl) return;
             
-            // 收集所有出現過嘅週期 ID（包括記錄裏面嘅同埋 pastCycles 嘅，以及當前 foodCycleId）
-            const cycleSet = new Set();
-            cycleSet.add(foodCycleId);
-            foodRecords.forEach(r => { if (r.cycleId) cycleSet.add(r.cycleId); });
-            foodPastCycles.forEach(c => { if (c.cycleId) cycleSet.add(c.cycleId); });
+            // 收集所有有記錄的星期一日期
+            const weekSet = new Set();
+            weekSet.add(currentFoodWeekStart);
+            getUniqueFoodRecords().forEach(r => {
+                if (r.date) {
+                    weekSet.add(getWeekKey(r.date));
+                }
+            });
 
-            // 排序週期
-            const sortedCycles = Array.from(cycleSet).sort((a, b) => a - b);
+            // 排序星期（由舊到新或由新到舊，這裡由新到舊排列方便選擇）
+            const sortedWeeks = Array.from(weekSet).sort((a, b) => b.localeCompare(a));
 
             let html = '';
-            sortedCycles.forEach(i => {
-                html += `<option value="${i}">跳至：食幾多慳幾多週期 #${i} ${i === foodCycleId ? '(當前)' : ''}</option>`;
+            sortedWeeks.forEach(monday => {
+                const sunday = getSundayStr(monday);
+                const label = `${formatDateToDMY(monday)} 至 ${formatDateToDMY(sunday)}`;
+                const isCurrent = (monday === currentFoodWeekStart) ? ' (當前)' : '';
+                html += `<option value="${monday}">${label}${isCurrent}</option>`;
             });
             
             selectEl.innerHTML = html;
-            selectEl.value = foodCycleId;
+            selectEl.value = currentFoodWeekStart;
         }
 
         function onFoodCycleJumpChange() {
             const selectEl = document.getElementById('food-cycle-jump');
             if (!selectEl) return;
-            const targetCycle = parseInt(selectEl.value);
-            if (!isNaN(targetCycle)) {
-                foodCycleId = targetCycle;
-                localStorage.setItem('god_cookery_cycle_id', foodCycleId.toString());
-                renderFood();
-            }
+            currentFoodWeekStart = selectEl.value;
+            renderFood();
+        }
+
+        function onFoodDateChange(dateVal) {
+            if (!dateVal) return;
+            // 當用戶在modal改左日期，自動切換當前檢視週期去嗰個星期
+            currentFoodWeekStart = getWeekKey(dateVal);
+            populateFoodCycleJump();
         }
 
         function openFoodModal() {
+            const todayStr = new Date().toISOString().substring(0, 10);
+            currentFoodWeekStart = getWeekKey(todayStr);
             populateFoodCycleJump();
-            document.getElementById('food-input-date').valueAsDate = new Date();
+            document.getElementById('food-input-date').value = todayStr;
             document.getElementById('food-input-name').value = '';
             document.getElementById('food-input-cost').value = '180';
             selectFoodType('豪華大餐');
@@ -2527,7 +2137,6 @@
 
             const newRecord = {
                 id: Date.now(),
-                cycleId: foodCycleId,
                 date: dateVal,
                 type: currentSelectedFoodType,
                 name: nameVal,
@@ -2539,6 +2148,7 @@
             foodRecords.unshift(newRecord);
             localStorage.setItem('god_cookery_records_v2', JSON.stringify(foodRecords));
 
+            currentFoodWeekStart = getWeekKey(dateVal);
             closeFoodModal();
             renderFood();
             updateDashboardOverview();
@@ -2546,12 +2156,13 @@
 
         function deleteLastFoodStep() {
             const uniqueRecords = getUniqueFoodRecords();
-            const activeIndexInUnique = uniqueRecords.findIndex(r => r.cycleId === foodCycleId && r.type !== '豪華大餐歸零結算');
-            if (activeIndexInUnique === -1) {
-                alert('本期沒有可刪除的餐食記錄！');
+            // 過濾出屬於當前星期的記錄
+            const currentWeekRecords = uniqueRecords.filter(r => getWeekKey(r.date) === currentFoodWeekStart && r.type !== '豪華大餐歸零結算');
+            if (currentWeekRecords.length === 0) {
+                alert('本星期沒有可刪除的餐食記錄！');
                 return;
             }
-            const target = uniqueRecords[activeIndexInUnique];
+            const target = currentWeekRecords[0]; // 最新的一筆
             if (confirm(`確定要刪除最近輸入的紀錄嗎？\n\n📌 「${target.name}」`)) {
                 foodRecords = foodRecords.filter(r => r.id !== target.id);
                 localStorage.setItem('god_cookery_records_v2', JSON.stringify(foodRecords));
@@ -2570,9 +2181,9 @@
         }
 
         function settleLuxuryReset() {
-            const activeRecords = getUniqueFoodRecords().filter(r => r.cycleId === foodCycleId);
+            const activeRecords = getUniqueFoodRecords().filter(r => getWeekKey(r.date) === currentFoodWeekStart);
             const luxuryCount = activeRecords.filter(r => r.type === '豪華大餐').length;
-            // 豪華大餐次數改為 3
+            // 豪華大餐次數上限為 3
             let luxuryLeft = 3 - luxuryCount;
 
             if (luxuryLeft <= 0) {
@@ -2586,7 +2197,6 @@
 
                 const resetRecord = {
                     id: Date.now(),
-                    cycleId: foodCycleId,
                     date: todayStr,
                     type: '豪華大餐歸零結算',
                     name: `豪華大餐歸零結算 (${luxuryLeft}次 x $100)`,
@@ -2607,50 +2217,127 @@
         }
 
         function confirmResetFoodCycle() {
-            const activeRecords = getUniqueFoodRecords().filter(r => r.cycleId === foodCycleId);
-            if (confirm('確定要重置食幾多慳幾多週期嗎？當前期的紀錄將會存檔。')) {
-                const totalDiff = activeRecords.reduce((sum, r) => sum + r.diff, 0);
+            // 由於改為以星期一至日自動劃分，按「重置週期」可以直接跳到新的一星期（下週一）
+            const nextWeekMonday = new Date(currentFoodWeekStart);
+            nextWeekMonday.setDate(nextWeekMonday.getDate() + 7);
+            currentFoodWeekStart = nextWeekMonday.toISOString().substring(0, 10);
+            renderFood();
+            alert(`已切換至新一星期週期：${formatDateToDMY(currentFoodWeekStart)} 起`);
+        }
 
-                const cycleSummary = {
-                    cycleId: foodCycleId,
-                    startDate: activeRecords.length > 0 ? activeRecords[activeRecords.length - 1].date : '無紀錄',
-                    endDate: activeRecords.length > 0 ? activeRecords[0].date : '無紀錄',
-                    totalBalance: totalDiff,
-                    recordCount: activeRecords.length
-                };
-
-                foodPastCycles.unshift(cycleSummary);
-                localStorage.setItem('god_cookery_past_cycles', JSON.stringify(foodPastCycles));
-
-                foodCycleId += 1;
-                localStorage.setItem('god_cookery_cycle_id', foodCycleId.toString());
-
-                renderFood();
-                updateDashboardOverview();
-                alert(`已成功開啟新週期 #${foodCycleId}！`);
+        // Edit Food Modal (支援編輯餐食及豪華大餐歸零結算記錄的日期)
+        function openEditFoodModal(id) {
+            const r = foodRecords.find(item => item.id === id);
+            if (!r) return;
+            document.getElementById('edit-food-id').value = r.id;
+            document.getElementById('edit-food-date').value = r.date;
+            
+            const typeGroup = document.getElementById('edit-food-type-group');
+            const costLabel = document.getElementById('edit-food-cost-label');
+            
+            if (r.isResetSettlement) {
+                typeGroup.style.display = 'none';
+                document.getElementById('edit-food-name').value = r.name;
+                document.getElementById('edit-food-cost').value = -r.cost; // 金額
+                costLabel.innerText = '結算金額 ($)';
+            } else {
+                typeGroup.style.display = 'block';
+                document.getElementById('edit-food-type').value = r.type;
+                document.getElementById('edit-food-name').value = r.name;
+                document.getElementById('edit-food-cost').value = r.cost;
+                costLabel.innerText = '食咗幾多錢 ($)';
             }
+
+            document.getElementById('edit-food-modal').classList.add('active');
+        }
+
+        function closeEditFoodModal() {
+            document.getElementById('edit-food-modal').classList.remove('active');
+        }
+
+        function updateFoodRecord() {
+            const id = parseInt(document.getElementById('edit-food-id').value);
+            const dateVal = document.getElementById('edit-food-date').value;
+            const nameVal = document.getElementById('edit-food-name').value.trim();
+            const costVal = parseFloat(document.getElementById('edit-food-cost').value);
+
+            if (!dateVal || !nameVal || isNaN(costVal)) {
+                alert('請完整填寫日期、名稱與金額！');
+                return;
+            }
+
+            const idx = foodRecords.findIndex(item => item.id === id);
+            if (idx !== -1) {
+                if (foodRecords[idx].isResetSettlement) {
+                    foodRecords[idx].date = dateVal;
+                    foodRecords[idx].name = nameVal;
+                    foodRecords[idx].cost = -costVal;
+                    foodRecords[idx].diff = costVal;
+                } else {
+                    const typeVal = document.getElementById('edit-food-type').value;
+                    const budget = typeVal === '豪華大餐' ? 200 : 100;
+                    const diff = budget - costVal;
+
+                    foodRecords[idx].date = dateVal;
+                    foodRecords[idx].type = typeVal;
+                    foodRecords[idx].name = nameVal;
+                    foodRecords[idx].cost = costVal;
+                    foodRecords[idx].budget = budget;
+                    foodRecords[idx].diff = diff;
+                }
+                localStorage.setItem('god_cookery_records_v2', JSON.stringify(foodRecords));
+            }
+
+            closeEditFoodModal();
+            renderFood();
+            updateDashboardOverview();
         }
 
         function openFoodHistoryModal() {
             const listEl = document.getElementById('food-history-list');
-            if (foodPastCycles.length === 0) {
-                listEl.innerHTML = '<div style="text-align:center; color:#9ca3af; padding:20px;">暫無已封存的週期紀錄</div>';
+            const uniqueRecs = getUniqueFoodRecords();
+
+            // 找出所有有記錄的星期
+            const weekMap = {};
+            uniqueRecs.forEach(r => {
+                if (r.date) {
+                    const wk = getWeekKey(r.date);
+                    if (!weekMap[wk]) weekMap[wk] = [];
+                    weekMap[wk].push(r);
+                }
+            });
+
+            const sortedWeeks = Object.keys(weekMap).sort((a, b) => b.localeCompare(a));
+
+            if (sortedWeeks.length === 0) {
+                listEl.innerHTML = '<div style="text-align:center; color:#9ca3af; padding:20px;">暫無有記錄的星期週期</div>';
             } else {
-                listEl.innerHTML = foodPastCycles.map(c => `
-                    <div class="history-card">
+                listEl.innerHTML = sortedWeeks.map(monday => {
+                    const sunday = getSundayStr(monday);
+                    const recs = weekMap[monday];
+                    const totalBal = recs.reduce((sum, r) => sum + r.diff, 0);
+
+                    return `
+                    <div class="history-card" style="cursor: pointer;" onclick="jumpToWeekFromHistory('${monday}')">
                         <div class="history-header">
-                            <span>週期 #${c.cycleId}</span>
-                            <span style="color: ${c.totalBalance >= 0 ? '#059669' : '#d90429'};">總結餘: $${c.totalBalance.toFixed(1)}</span>
+                            <span>📅 ${formatDateToDMY(monday)} 至 ${formatDateToDMY(sunday)}</span>
+                            <span style="color: ${totalBal >= 0 ? '#059669' : '#d90429'};">總結餘: $${totalBal.toFixed(1)}</span>
                         </div>
                         <div class="history-summary">
-                            <div>起始日期：${c.startDate}</div>
-                            <div>結束日期：${c.endDate}</div>
-                            <div>紀錄筆數：${c.recordCount} 筆</div>
+                            <div>紀錄筆數：${recs.length} 筆</div>
+                            <div>點擊直接查看此週 ➔</div>
                         </div>
                     </div>
-                `).join('');
+                    `;
+                }).join('');
             }
             document.getElementById('food-history-modal').classList.add('active');
+        }
+
+        function jumpToWeekFromHistory(mondayStr) {
+            currentFoodWeekStart = mondayStr;
+            closeFoodHistoryModal();
+            renderFood();
         }
 
         function closeFoodHistoryModal() {
@@ -2658,8 +2345,12 @@
         }
 
         function renderFood() {
-            document.getElementById('food-cycle-id').innerText = `週期 #${foodCycleId}`;
-            const activeRecords = getUniqueFoodRecords().filter(r => r.cycleId === foodCycleId);
+            const sundayStr = getSundayStr(currentFoodWeekStart);
+            document.getElementById('food-cycle-id').innerText = `${formatDateToDMY(currentFoodWeekStart)} 至 ${formatDateToDMY(sundayStr)}`;
+            
+            const uniqueRecords = getUniqueFoodRecords();
+            // 過濾出屬於當前星期的記錄
+            const activeRecords = uniqueRecords.filter(r => getWeekKey(r.date) === currentFoodWeekStart);
 
             const luxuryCount = activeRecords.filter(r => r.type === '豪華大餐').length;
             const hasResetSettled = activeRecords.some(r => r.isResetSettlement);
@@ -2677,7 +2368,7 @@
 
             const listEl = document.getElementById('food-records-list');
             if (activeRecords.length === 0) {
-                listEl.innerHTML = '<div style="text-align:center; color:#9ca3af; padding:20px;">本週期暫無餐食紀錄</div>';
+                listEl.innerHTML = '<div style="text-align:center; color:#9ca3af; padding:20px;">本星期暫無餐食紀錄</div>';
                 return;
             }
 
@@ -2692,6 +2383,7 @@
                         <div class="record-amount">
                             <div class="record-cost" style="color: var(--success);">+$${r.diff.toFixed(1)}</div>
                             <div style="margin-top: 4px;">
+                                <button class="btn-edit-item" onclick="openEditFoodModal(${r.id})">編輯</button>
                                 <button class="bookmark-del-btn" onclick="deleteFoodRecordDirect(${r.id})">刪除</button>
                             </div>
                         </div>
@@ -2832,9 +2524,7 @@
                 transitRecords,
                 transitPastCycles,
                 transitBookmarks,
-                foodCycleId,
-                foodRecords,
-                foodPastCycles
+                foodRecords
             };
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
             const downloadAnchor = document.createElement('a');
@@ -2865,9 +2555,7 @@
                     if (data.transitRecords) localStorage.setItem('kmb_records_v1', JSON.stringify(data.transitRecords));
                     if (data.transitPastCycles) localStorage.setItem('kmb_past_cycles', JSON.stringify(data.transitPastCycles));
                     if (data.transitBookmarks) localStorage.setItem('kmb_bookmarks', JSON.stringify(data.transitBookmarks));
-                    if (data.foodCycleId) localStorage.setItem('god_cookery_cycle_id', data.foodCycleId);
                     if (data.foodRecords) localStorage.setItem('god_cookery_records_v2', JSON.stringify(data.foodRecords));
-                    if (data.foodPastCycles) localStorage.setItem('god_cookery_past_cycles', JSON.stringify(data.foodPastCycles));
 
                     alert('資料匯入成功！頁面即將重新載入。');
                     location.reload();
