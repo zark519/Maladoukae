@@ -2436,14 +2436,11 @@
         let foodPastCycles = JSON.parse(localStorage.getItem('god_cookery_past_cycles') || '[]');
         let currentSelectedFoodType = '豪華大餐';
 
-        // 需求2：當歷史記錄嘅同一個周期出現多過一次 淨係保留最新嘅個
+        // 歷史記錄去重：保留最新嘅一個
         function getUniqueFoodRecords() {
             const seen = new Set();
             const unique = [];
-            // foodRecords係最新喺前面 (unshift)，所以順序行落去遇到同一id或者完全重複既可以過濾
-            // 如果指既係「同一周期入面重複既記錄」，可以用id或者組合key黎判斷，以下確保只保留最新既一筆
             for (const r of foodRecords) {
-                // 如果係用唯一id去重：
                 if (!seen.has(r.id)) {
                     seen.add(r.id);
                     unique.push(r);
@@ -2455,10 +2452,21 @@
         function populateFoodCycleJump() {
             const selectEl = document.getElementById('food-cycle-jump');
             if (!selectEl) return;
+            
+            // 收集所有出現過嘅週期 ID（包括記錄裏面嘅同埋 pastCycles 嘅，以及當前 foodCycleId）
+            const cycleSet = new Set();
+            cycleSet.add(foodCycleId);
+            foodRecords.forEach(r => { if (r.cycleId) cycleSet.add(r.cycleId); });
+            foodPastCycles.forEach(c => { if (c.cycleId) cycleSet.add(c.cycleId); });
+
+            // 排序週期
+            const sortedCycles = Array.from(cycleSet).sort((a, b) => a - b);
+
             let html = '';
-            for (let i = 1; i <= foodCycleId; i++) {
-                html += `<option value="${i}">跳至：食幾多慳幾多週期 #${i}</option>`;
-            }
+            sortedCycles.forEach(i => {
+                html += `<option value="${i}">跳至：食幾多慳幾多週期 #${i} ${i === foodCycleId ? '(當前)' : ''}</option>`;
+            });
+            
             selectEl.innerHTML = html;
             selectEl.value = foodCycleId;
         }
@@ -2564,7 +2572,7 @@
         function settleLuxuryReset() {
             const activeRecords = getUniqueFoodRecords().filter(r => r.cycleId === foodCycleId);
             const luxuryCount = activeRecords.filter(r => r.type === '豪華大餐').length;
-            // 需求3：豪華大餐嘅次數由四改做三
+            // 豪華大餐次數改為 3
             let luxuryLeft = 3 - luxuryCount;
 
             if (luxuryLeft <= 0) {
@@ -2655,7 +2663,6 @@
 
             const luxuryCount = activeRecords.filter(r => r.type === '豪華大餐').length;
             const hasResetSettled = activeRecords.some(r => r.isResetSettlement);
-            // 需求3：豪華大餐次數基準改為 3
             let luxuryLeft = 3 - luxuryCount;
             if (hasResetSettled || luxuryLeft < 0) {
                 luxuryLeft = 0;
