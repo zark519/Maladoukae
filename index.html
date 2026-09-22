@@ -72,7 +72,7 @@
         .module-title { font-size: 1.1rem; font-weight: 700; color: var(--primary); }
 
         /* General KPI styling */
-        .kpi-container { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .kpi-container { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 16px; }
         .kpi-card { background: var(--card-bg); padding: 16px; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .kpi-title { font-size: 0.85rem; color: #6b7280; font-weight: 600; margin-bottom: 6px; }
         .kpi-value { font-size: 1.4rem; font-weight: 800; color: var(--primary); }
@@ -107,1223 +107,2655 @@
         .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; background: white; padding: 10px 14px; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
         .cal-header button { background: #f3f4f6; border: 1px solid #d1d5db; padding: 6px 12px; border-radius: 6px; font-weight: 600; cursor: pointer; }
         .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 16px; }
-        .cal-weekday { text-align: center; font-size: 0.75rem; font-weight: 700; color: #6b7280; padding: 4px 0; }
-        .cal-day { background: white; border-radius: 8px; min-height: 52px; padding: 4px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid #e5e7eb; font-size: 0.75rem; position: relative; }
+        .cal-weekday { text-align: center; font-size: 0.75rem; font-weight: 700; color: #6b7280; padding-bottom: 4px; }
+        .cal-day { background: white; min-height: 65px; border-radius: 8px; padding: 4px; font-size: 0.75rem; border: 1px solid #e5e7eb; position: relative; overflow: hidden; }
         .cal-day.other-month { background: #f9fafb; opacity: 0.4; }
-        .cal-day.today { border-color: var(--primary); border-width: 2px; }
-        .cal-day-num { font-weight: 700; color: #374151; }
-        .cal-day-content { font-size: 0.65rem; text-align: center; font-weight: 600; border-radius: 4px; padding: 1px 2px; margin-top: auto; }
+        .cal-day-num { font-weight: 700; margin-bottom: 2px; color: #374151; }
+        .cal-badge { background: #ccfbf1; color: #0f766e; font-size: 0.65rem; padding: 1px 3px; border-radius: 4px; margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; font-weight: 600; }
 
-        /* History & List Elements */
-        .history-card { background: white; border-radius: 12px; padding: 12px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); display: flex; justify-content: space-between; align-items: center; }
-        .history-info { display: flex; flex-direction: column; gap: 2px; }
-        .history-date { font-size: 0.75rem; color: #6b7280; }
-        .history-desc { font-size: 0.9rem; font-weight: 700; color: #374151; }
-        .history-amount { font-weight: 800; font-size: 0.95rem; }
+        /* Modal Pop-up - Centered Window */
+        .modal { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0,0,0,0.5); 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 1000; 
+            padding: 16px;
+        }
+        .modal.active { display: flex; }
+        .modal-content { 
+            background: white; 
+            width: 100%; 
+            max-width: 440px; 
+            border-radius: 16px; 
+            padding: 24px; 
+            animation: fadeIn 0.2s ease-out; 
+            max-height: 85vh; 
+            overflow-y: auto; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: scale(0.95); } 
+            to { opacity: 1; transform: scale(1); } 
+        }
         
-        .delete-item-btn { background: #fee2e2; color: #dc2626; border: none; width: 28px; height: 28px; border-radius: 6px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-
-        /* Modal Overlay */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 16px; }
-        .modal { background: white; width: 100%; max-width: 400px; border-radius: 16px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); animation: modalIn 0.2s ease; }
-        @keyframes modalIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        .modal-title { font-size: 1.1rem; font-weight: 800; color: var(--primary); margin-bottom: 14px; text-align: center; }
         .form-group { margin-bottom: 14px; }
-        .form-group label { display: block; font-size: 0.8rem; font-weight: 700; color: #4b5563; margin-bottom: 6px; }
-        .form-control { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.9rem; outline: none; }
-        .form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(27,54,93,0.1); }
+        .form-group label { display: block; font-size: 0.88rem; font-weight: 600; margin-bottom: 6px; color: #374151; }
+        .form-control { width: 100%; padding: 11px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.95rem; background: white; }
+        select.form-control { -webkit-appearance: none; appearance: none; background-image: url('data:image/svg+xml;utf8,<svg fill="%23374151" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>'); background-repeat: no-repeat; background-position: right 10px center; }
+        
         .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
-        .modal-btn { padding: 10px; border-radius: 8px; font-weight: 700; font-size: 0.9rem; cursor: pointer; border: none; }
-        .modal-btn-cancel { background: #e5e7eb; color: #374151; }
-        .modal-btn-submit { background: var(--primary); color: white; }
+        .btn-cancel { background: #f3f4f6; color: #4b5563; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .btn-save { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+        .btn-save-kmb { background: var(--kmb-red); }
+        .btn-save-success { background: var(--success); }
+        .btn-save-sport { background: var(--sport-green); }
+        .btn-save-love { background: var(--love-purple); }
+        .btn-save-trip { background: var(--trip-blue); }
 
-        /* Hidden utility */
-        .hidden { display: none !important; }
+        /* Records List */
+        .list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .list-title { font-size: 1.1rem; font-weight: 700; color: var(--primary); }
+        .cycle-badge { font-size: 0.75rem; background: #e5e7eb; padding: 4px 8px; border-radius: 6px; font-weight: 600; color: #374151; }
+        
+        .record-card { background: white; padding: 14px; border-radius: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 4px rgba(0,0,0,0.04); }
+        .record-info div:first-child { font-weight: 700; font-size: 0.95rem; }
+        .record-info div:last-child { font-size: 0.8rem; color: #6b7280; margin-top: 2px; }
+        .record-amount { text-align: right; }
+        .record-cost { font-size: 1rem; font-weight: 700; }
+        .record-diff { font-size: 0.8rem; font-weight: 600; }
+        .surplus { color: var(--success); }
+        .deficit { color: var(--danger); }
+        .badge { display: inline-block; padding: 2px 6px; font-size: 0.75rem; border-radius: 4px; font-weight: 600; margin-right: 4px; }
+        .badge-luxury { background: #fef3c7; color: #92400e; }
+        .badge-simple { background: #e0f2fe; color: #075985; }
+        .badge-kmb { background: #fee2e2; color: #991b1b; }
+        .badge-airport { background: #fef3c7; color: #92400e; }
+        .badge-reimburse { background: #d1fae5; color: #065f46; }
+        .badge-other { background: #e5e7eb; color: #374151; }
+        .badge-sport { background: #ccfbf1; color: #0f766e; }
+        .badge-love { background: #ede9fe; color: #6d28d9; }
+        .badge-trip { background: #e0f2fe; color: #0369a1; }
+        
+        /* History Modal Styling */
+        .history-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+        .history-header { display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 8px; border-bottom: 1px solid #cbd5e1; padding-bottom: 6px; }
+        .history-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.85rem; color: #475569; }
+        
+        .preview-box { background: #f8fafc; border: 1px dashed #cbd5e1; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 0.85rem; }
+        .preview-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+
+        .bookmark-row { display: flex; gap: 6px; align-items: center; }
+        .btn-sm-action { background: #f3f4f6; border: 1px solid #d1d5db; padding: 10px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; cursor: pointer; white-space: nowrap; color: #374151; }
+        .bookmark-item { display: flex; justify-content: space-between; align-items: center; background: #f9fafb; border: 1px solid #e5e7eb; padding: 8px 10px; border-radius: 8px; margin-bottom: 6px; }
+        .bookmark-del-btn { background: #fee2e2; color: #dc2626; border: none; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; }
+        .btn-repaid { background: #d1fae5; color: #065f46; border: 1px solid #a3e635; padding: 6px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; margin-top: 4px; }
+        .btn-edit-item { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; cursor: pointer; margin-top: 4px; margin-right: 4px; }
+
+        /* Trip Specific Card */
+        .trip-card { background: white; border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 5px solid var(--trip-blue); }
+        .trip-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .trip-card-title { font-size: 1.1rem; font-weight: 800; color: var(--trip-blue); }
+        .trip-badge-frozen { background: #dbeafe; color: #1e40af; font-size: 0.75rem; padding: 2px 8px; border-radius: 6px; font-weight: 700; }
+        .trip-badge-active { background: #fef3c7; color: #92400e; font-size: 0.75rem; padding: 2px 8px; border-radius: 6px; font-weight: 700; }
     </style>
 </head>
 <body>
 
-    <!-- DASHBOARD HOME VIEW -->
-    <div id="home-view" class="view active">
+    <!-- ==================== MAIN DASHBOARD VIEW ==================== -->
+    <div id="view-dashboard" class="view active">
         <div class="dash-header">
-            <h1>Málàdöükæ Dashboard</h1>
-            <p>生活全方位記錄系統</p>
+            <h1>📱 Málàdöükæ</h1>
         </div>
 
-        <!-- Month / Year Selector Bar -->
+        <!-- Year Selector Bar -->
         <div class="month-selector-bar">
             <div class="month-selector-top">
-                <label id="selected-year-label">2026年 總覽</label>
+                <label>📅 選擇統計年份：</label>
+                <span id="current-selected-year-label" style="font-size: 0.8rem; font-weight: 700; color: var(--accent);">2026年</span>
             </div>
-            <div class="month-buttons-row" id="month-buttons-container">
-                <!-- Populated by JS -->
+            <div class="month-buttons-row">
+                <button class="month-btn year-btn" onclick="selectDashboardYear('ALL', this)">全部</button>
+                <button class="month-btn year-btn" onclick="selectDashboardYear('2024', this)">2024</button>
+                <button class="month-btn year-btn" onclick="selectDashboardYear('2025', this)">2025</button>
+                <button class="month-btn year-btn active" onclick="selectDashboardYear('2026', this)">2026</button>
+                <button class="month-btn year-btn" onclick="selectDashboardYear('2027', this)">2027</button>
             </div>
         </div>
 
-        <!-- Global Total KPI Card -->
+        <!-- Month Selector Bar (Buttons 1-12 & All) -->
+        <div class="month-selector-bar">
+            <div class="month-selector-top">
+                <label>📅 選擇統計月份：</label>
+                <span id="current-selected-month-label" style="font-size: 0.8rem; font-weight: 700; color: var(--accent);">9月</span>
+            </div>
+            <div class="month-buttons-row" id="dashboard-month-buttons-row">
+                <button class="month-btn month-select-btn" onclick="selectDashboardMonth('ALL', this)">全部</button>
+                <button class="month-btn month-select-btn" onclick="selectDashboardMonth('01', this)">1月</button>
+                <button class="month-btn month-select-btn" onclick="selectDashboardMonth('02', this)">2月</button>
+                <button class="month-btn month-select-btn" onclick="selectDashboardMonth('03', this)">3月</button>
+                <button class="month-btn month-select-btn" onclick="selectDashboardMonth('04', this)">4月</button>
+                <button class="month-btn month-select-btn" onclick="selectDashboardMonth('05', this)">5月</button>
+                <button class="month-btn month-select-btn" onclick="selectDashboardMonth('06', this)">6月</button>
+                <button class="month-btn month-select-btn" onclick="selectDashboardMonth('07', this)">7月</button>
+                <button class="month-btn month-select-btn" onclick="selectDashboardMonth('08', this)">8月</button>
+                <button class="month-btn month-select-btn active" onclick="selectDashboardMonth('09', this)">9月</button>
+                <button class="month-btn month-select-btn" onclick="selectDashboardMonth('10', this)">10月</button>
+                <button class="month-btn month-select-btn" onclick="selectDashboardMonth('11', this)">11月</button>
+                <button class="month-btn month-select-btn" onclick="selectDashboardMonth('12', this)">12月</button>
+            </div>
+        </div>
+
+        <!-- Total Expense Summary Card -->
         <div class="dash-total-card">
-            <div class="dash-total-title">本月綜合結餘 / 淨值 (HKD)</div>
-            <div class="dash-total-value" id="dash-net-total">$0.00</div>
+            <div class="dash-total-title" id="dash-total-title-text">💰 總開支</div>
+            <div class="dash-total-value" id="home-total-expense">$0.0</div>
         </div>
 
-        <!-- Data Backup Bar -->
-        <div class="backup-bar">
-            <button class="backup-btn" onclick="exportData()">💾 匯出資料 (JSON)</button>
-            <button class="backup-btn" onclick="importDataTrigger()">📂 匯入資料 (JSON)</button>
-            <input type="file" id="import-file-input" style="display:none" accept=".json" onchange="importDataFile(event)">
-        </div>
-
-        <!-- App Grid (2 columns) -->
+        <!-- App Grid with KPIs inside buttons -->
         <div class="app-grid">
-            <!-- Food Module -->
-            <div class="app-card" onclick="switchView('food-view')">
-                <div class="app-icon">🍲</div>
+            <div class="app-card" onclick="switchView('food')">
+                <div class="app-icon">🍱</div>
                 <div class="app-title">食幾多慳幾多</div>
-                <div class="app-sub">飲食開支與結餘</div>
-                <div class="app-kpi-badge" id="dash-food-kpi">$0</div>
+                <div class="app-sub">日常飲食管理</div>
+                <div class="app-kpi-badge" id="dash-btn-food">$0 (0筆)</div>
             </div>
-
-            <!-- KMB Module -->
-            <div class="app-card" onclick="switchView('kmb-view')">
+            <div class="app-card" onclick="switchView('transit')">
                 <div class="app-icon">🚌</div>
-                <div class="app-title">九巴月票</div>
-                <div class="app-sub">回本與搭乘紀錄</div>
-                <div class="app-kpi-badge" id="dash-kmb-kpi">0程 / $0</div>
-            </div>
-
-            <!-- Sport Module -->
-            <div class="app-card" onclick="switchView('sport-view')">
-                <div class="app-icon">🏃</div>
-                <div class="app-title">運動紀錄</div>
-                <div class="app-sub">跑步與消耗</div>
-                <div class="app-kpi-badge" id="dash-sport-kpi">0 km</div>
-            </div>
-
-            <!-- Love Module -->
-            <div class="app-card" onclick="switchView('love-view')">
-                <div class="app-icon">❤️</div>
-                <div class="app-title">拍拖基金</div>
-                <div class="app-sub">甜蜜回憶開支</div>
-                <div class="app-kpi-badge" id="dash-love-kpi">$0</div>
-            </div>
-
-            <!-- Trip Module -->
-            <div class="app-card" onclick="switchView('trip-view')">
-                <div class="app-icon">✈️</div>
-                <div class="app-title">旅遊儲蓄</div>
-                <div class="app-sub">目標進度追蹤</div>
-                <div class="app-kpi-badge" id="dash-trip-kpi">$0</div>
+                <div class="app-title">九巴月票慳慳慳</div>
+                <div class="app-sub">九巴/機場線</div>
+                <div class="app-kpi-badge" id="dash-btn-transit">$834</div>
             </div>
         </div>
-
-        <!-- Full width modules -->
+        <div class="app-grid">
+            <div class="app-card" onclick="switchView('sport')">
+                <div class="app-icon">🏃‍♂️</div>
+                <div class="app-title">運動燃燒脂肪及金錢</div>
+                <div class="app-sub">月曆檢視</div>
+                <div class="app-kpi-badge" id="dash-btn-sport">$0 (0次)</div>
+            </div>
+            <div class="app-card" onclick="switchView('love')">
+                <div class="app-icon">💖</div>
+                <div class="app-title">錢變成喜歡的形狀</div>
+                <div class="app-sub">心頭好開支</div>
+                <div class="app-kpi-badge" id="dash-btn-love">$0 (0筆)</div>
+            </div>
+        </div>
         <div class="app-grid-full">
-            <div class="app-card-full" onclick="switchView('debt-view')">
+            <div class="app-card-full" onclick="switchView('trip')">
                 <div style="display: flex; align-items: center; gap: 12px;">
-                    <div class="app-icon" style="margin-bottom:0;">💳</div>
+                    <div class="app-icon" style="font-size: 2rem; margin-bottom:0;">✈️</div>
                     <div style="text-align: left;">
-                        <div class="app-title">債務管理</div>
-                        <div class="app-sub">還款進度與結欠</div>
+                        <div class="app-title">來都來了啱就買啦</div>
+                        <div class="app-sub">多幣別旅遊、匯率換算</div>
                     </div>
                 </div>
-                <div class="app-kpi-badge" id="dash-debt-kpi">$0</div>
+                <div class="app-kpi-badge" id="dash-btn-trip">$0</div>
+            </div>
+        </div>
+        <div class="app-grid-full">
+            <div class="app-card-full" onclick="switchView('debt')">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div class="app-icon" style="font-size: 2rem; margin-bottom:0;">💸</div>
+                    <div style="text-align: left;">
+                        <div class="app-title">欠債還錢天經地義</div>
+                        <div class="app-sub">應收款與應付款管理</div>
+                    </div>
+                </div>
+                <div class="app-kpi-badge" id="dash-btn-debt">$0</div>
             </div>
         </div>
 
+        <!-- Backup & Restore Data Bar -->
+        <div class="backup-bar">
+            <button class="backup-btn" onclick="exportDataFile()">💾 匯出紀錄 (.txt)</button>
+            <button class="backup-btn" onclick="triggerImportFile()">📂 匯入紀錄 (.txt)</button>
+            <input type="file" id="import-file-input" style="display: none;" accept=".txt,.json" onchange="importDataFile(event)">
+        </div>
+
+        <!-- Bottom Left Date Display -->
         <div class="bottom-bar-info">
-            <div class="current-date-badge" id="current-date-badge">📅 載入中...</div>
+            <div id="current-date-display" class="current-date-badge">📅 載入中...</div>
         </div>
     </div>
 
 
-    <!-- 1. FOOD MODULE VIEW -->
-    <div id="food-view" class="view">
+    <!-- ==================== TRANSIT APP VIEW ==================== -->
+    <div id="view-transit" class="view">
         <div class="nav-bar">
-            <button class="back-btn" onclick="switchView('home-view')">← 返回主頁</button>
-            <div class="module-title">🍲 食幾多慳幾多</div>
-            <div style="width: 60px;"></div>
+            <button class="back-btn" onclick="switchView('dashboard')">⬅ 返回 Dashboard</button>
+            <div class="module-title">🚌 九巴月票慳慳慳</div>
+            <div style="width: 50px;"></div>
         </div>
 
         <div class="kpi-container">
             <div class="kpi-card">
-                <div class="kpi-title">本月總洗費</div>
-                <div class="kpi-value red" id="food-total-spent">$0.00</div>
+                <div class="kpi-title">月票成本 ($834)</div>
+                <div class="kpi-value red" id="kmb-net-status">尚未回本</div>
             </div>
             <div class="kpi-card">
-                <div class="kpi-title">本月慳到 / 超支</div>
-                <div class="kpi-value" id="food-total-saved">$0.00</div>
+                <div class="kpi-title">本期累計總共慳咗</div>
+                <div class="kpi-value" id="kmb-total-saved" style="color: var(--success);">$0</div>
             </div>
         </div>
 
         <div class="btn-group-primary">
-            <button class="add-btn" onclick="openFoodModal()">+ 記錄一餐</button>
+            <button class="add-btn add-btn-kmb" onclick="openTransitModal()">➕ 記一程交通 (手動/書籤記錄)</button>
         </div>
+        
         <div class="btn-group-secondary">
-            <button class="undo-btn" onclick="undoFood()">↩ 復原上筆</button>
-            <button class="history-btn" onclick="switchSubView('food', 'list')">📋 歷史紀錄</button>
-            <button class="history-btn" onclick="switchSubView('food', 'calendar')">📅 月曆模式</button>
+            <button class="undo-btn" onclick="deleteLastTransitStep()">↩️ 刪除上一筆</button>
+            <button class="history-btn" onclick="openTransitHistoryModal()">📜 歷屆月票</button>
+            <button class="reset-btn" onclick="confirmResetTransitCycle()">🔄 新一期月票</button>
         </div>
 
-        <!-- Food SubViews -->
-        <div id="food-sub-list">
-            <div id="food-history-list"></div>
+        <div class="list-header">
+            <div class="list-title" style="color: var(--kmb-red);">本期搭車紀錄</div>
+            <div class="cycle-badge" id="transit-cycle-id">月票期數 #1</div>
         </div>
-        <div id="food-sub-calendar" class="hidden">
-            <div class="cal-header">
-                <button onclick="changeCalMonth(-1)">◀ 上月</button>
-                <span id="food-cal-title" style="font-weight: 700; color: var(--primary);">2026年9月</span>
-                <button onclick="changeCalMonth(1)">下月 ▶</button>
-            </div>
-            <div class="cal-grid" id="food-cal-grid"></div>
-        </div>
+        <div id="transit-records-list"></div>
     </div>
 
 
-    <!-- 2. KMB MODULE VIEW -->
-    <div id="kmb-view" class="view">
+    <!-- ==================== FOOD APP VIEW ==================== -->
+    <div id="view-food" class="view">
         <div class="nav-bar">
-            <button class="back-btn" onclick="switchView('home-view')">← 返回主頁</button>
-            <div class="module-title">🚌 九巴月票回本器</div>
-            <div style="width: 60px;"></div>
+            <button class="back-btn" onclick="switchView('dashboard')">⬅ 返回 Dashboard</button>
+            <div class="module-title">🍱 食幾多慳幾多</div>
+            <div style="width: 50px;"></div>
         </div>
 
         <div class="kpi-container">
             <div class="kpi-card">
-                <div class="kpi-title">已搭乘次數</div>
-                <div class="kpi-value" id="kmb-total-rides">0 程</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-title">淨回本金額</div>
-                <div class="kpi-value" id="kmb-net-saving">$0.00</div>
+                <div class="kpi-title">食幾多慳幾多結餘</div>
+                <div class="kpi-value" id="total-balance">$0</div>
             </div>
         </div>
 
         <div class="btn-group-primary">
-            <button class="add-btn add-btn-kmb" onclick="openKmbModal()">+ 記錄搭車</button>
+            <button class="add-btn" onclick="openFoodModal()">➕ 記一筆餐食 (Pop-up 記帳)</button>
         </div>
+        
         <div class="btn-group-secondary">
-            <button class="undo-btn" onclick="undoKmb()">↩ 復原上筆</button>
-            <button class="history-btn" onclick="switchSubView('kmb', 'list')">📋 歷史紀錄</button>
-            <button class="history-btn" onclick="switchSubView('kmb', 'calendar')">📅 月曆模式</button>
+            <button class="undo-btn" onclick="deleteLastFoodStep()">↩️ 刪除上一筆</button>
+            <button class="history-btn" onclick="openFoodHistoryModal()">📜 歷屆紀錄</button>
+            <button class="reset-btn" onclick="confirmResetFoodCycle()">🔄 重置週期</button>
         </div>
 
-        <!-- KMB SubViews -->
-        <div id="kmb-sub-list">
-            <div id="kmb-history-list"></div>
+        <div class="list-header">
+            <div class="list-title">當前週期消費紀錄</div>
+            <div class="cycle-badge" id="food-cycle-id">週期 #1</div>
         </div>
-        <div id="kmb-sub-calendar" class="hidden">
-            <div class="cal-header">
-                <button onclick="changeCalMonth(-1)">◀ 上月</button>
-                <span id="kmb-cal-title" style="font-weight: 700; color: var(--primary);">2026年9月</span>
-                <button onclick="changeCalMonth(1)">下月 ▶</button>
-            </div>
-            <div class="cal-grid" id="kmb-cal-grid"></div>
-        </div>
+        <div id="food-records-list"></div>
     </div>
 
 
-    <!-- 3. SPORT MODULE VIEW -->
-    <div id="sport-view" class="view">
+    <!-- ==================== SPORT APP VIEW ==================== -->
+    <div id="view-sport" class="view">
         <div class="nav-bar">
-            <button class="back-btn" onclick="switchView('home-view')">← 返回主頁</button>
-            <div class="module-title">🏃 運動紀錄</div>
-            <div style="width: 60px;"></div>
-        </div>
-
-        <div class="kpi-container">
-            <div class="kpi-card">
-                <div class="kpi-title">本月總距離</div>
-                <div class="kpi-value" id="sport-total-dist">0.0 km</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-title">本月總消耗</div>
-                <div class="kpi-value red" id="sport-total-cal">0 kcal</div>
-            </div>
+            <button class="back-btn" onclick="switchView('dashboard')">⬅ 返回 Dashboard</button>
+            <div class="module-title">🏃‍♂️ 運動燃燒脂肪及金錢</div>
+            <div style="width: 50px;"></div>
         </div>
 
         <div class="btn-group-primary">
-            <button class="add-btn add-btn-sport" onclick="openSportModal()">+ 記錄運動</button>
-        </div>
-        <div class="btn-group-secondary">
-            <button class="undo-btn" onclick="undoSport()">↩ 復原上筆</button>
-            <button class="history-btn" onclick="switchSubView('sport', 'list')">📋 歷史紀錄</button>
-            <button class="history-btn" onclick="switchSubView('sport', 'calendar')">📅 月曆模式</button>
+            <button class="add-btn add-btn-sport" onclick="openSportModal()">➕ 記錄運動與洗費</button>
         </div>
 
-        <!-- Sport SubViews -->
-        <div id="sport-sub-list">
-            <div id="sport-history-list"></div>
+        <div class="cal-header">
+            <button onclick="changeSportMonth(-1)">◀ 上月</button>
+            <span id="sport-cal-title" style="font-weight: 700; color: var(--primary);">2026年9月</span>
+            <button onclick="changeSportMonth(1)">下月 ▶</button>
         </div>
-        <div id="sport-sub-calendar" class="hidden">
-            <div class="cal-header">
-                <button onclick="changeCalMonth(-1)">◀ 上月</button>
-                <span id="sport-cal-title" style="font-weight: 700; color: var(--primary);">2026年9月</span>
-                <button onclick="changeCalMonth(1)">下月 ▶</button>
-            </div>
-            <div class="cal-grid" id="sport-cal-grid"></div>
+
+        <div class="cal-grid">
+            <div class="cal-weekday">日</div>
+            <div class="cal-weekday">一</div>
+            <div class="cal-weekday">二</div>
+            <div class="cal-weekday">三</div>
+            <div class="cal-weekday">四</div>
+            <div class="cal-weekday">五</div>
+            <div class="cal-weekday">六</div>
         </div>
+        <div class="cal-grid" id="sport-calendar-days"></div>
+
+        <div class="list-header" style="margin-top: 14px;">
+            <div class="list-title" style="color: var(--sport-green);">運動明細記錄</div>
+        </div>
+        <div id="sport-records-list"></div>
     </div>
 
 
-    <!-- 4. LOVE MODULE VIEW -->
-    <div id="love-view" class="view">
+    <!-- ==================== LOVE VIEW ==================== -->
+    <div id="view-love" class="view">
         <div class="nav-bar">
-            <button class="back-btn" onclick="switchView('home-view')">← 返回主頁</button>
-            <div class="module-title">❤️ 拍拖基金</div>
-            <div style="width: 60px;"></div>
-        </div>
-
-        <div class="kpi-container">
-            <div class="kpi-card">
-                <div class="kpi-title">本月總開支</div>
-                <div class="kpi-value red" id="love-total-spent">$0.00</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-title">累積拍拖次數</div>
-                <div class="kpi-value" id="love-total-count">0 次</div>
-            </div>
+            <button class="back-btn" onclick="switchView('dashboard')">⬅ 返回 Dashboard</button>
+            <div class="module-title">💖 錢變成喜歡的形狀</div>
+            <div style="width: 50px;"></div>
         </div>
 
         <div class="btn-group-primary">
-            <button class="add-btn add-btn-love" onclick="openLoveModal()">+ 記錄拍拖洗費</button>
-        </div>
-        <div class="btn-group-secondary">
-            <button class="undo-btn" onclick="undoLove()">↩ 復原上筆</button>
-            <button class="history-btn" onclick="switchSubView('love', 'list')">📋 歷史紀錄</button>
-            <button class="history-btn" onclick="switchSubView('love', 'calendar')">📅 月曆模式</button>
+            <button class="add-btn add-btn-love" onclick="openLoveModal()">➕ 記錄喜歡的事與開支</button>
         </div>
 
-        <!-- Love SubViews -->
-        <div id="love-sub-list">
-            <div id="love-history-list"></div>
+        <div class="list-header">
+            <div class="list-title" style="color: var(--love-purple);">心頭好開支明細</div>
         </div>
-        <div id="love-sub-calendar" class="hidden">
-            <div class="cal-header">
-                <button onclick="changeCalMonth(-1)">◀ 上月</button>
-                <span id="love-cal-title" style="font-weight: 700; color: var(--primary);">2026年9月</span>
-                <button onclick="changeCalMonth(1)">下月 ▶</button>
-            </div>
-            <div class="cal-grid" id="love-cal-grid"></div>
-        </div>
+        <div id="love-records-list"></div>
     </div>
 
 
-    <!-- 5. TRIP MODULE VIEW -->
-    <div id="trip-view" class="view">
+    <!-- ==================== TRIP VIEW ==================== -->
+    <div id="view-trip" class="view">
         <div class="nav-bar">
-            <button class="back-btn" onclick="switchView('home-view')">← 返回主頁</button>
-            <div class="module-title">✈️ 旅遊儲蓄</div>
-            <div style="width: 60px;"></div>
-        </div>
-
-        <div class="kpi-container">
-            <div class="kpi-card">
-                <div class="kpi-title">總儲蓄金額</div>
-                <div class="kpi-value" id="trip-total-saved">$0.00</div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-title">目標達成率</div>
-                <div class="kpi-value" id="trip-progress-pct">0%</div>
-            </div>
+            <button class="back-btn" onclick="switchView('dashboard')">⬅ 返回 Dashboard</button>
+            <div class="module-title">✈️ 來都來了啱就買啦</div>
+            <div style="width: 50px;"></div>
         </div>
 
         <div class="btn-group-primary">
-            <button class="add-btn add-btn-trip" onclick="openTripModal()">+ 存入旅費 / 調整目標</button>
-        </div>
-        <div class="btn-group-secondary">
-            <button class="undo-btn" onclick="undoTrip()">↩ 復原上筆</button>
-            <button class="history-btn" onclick="switchSubView('trip', 'list')">📋 歷史紀錄</button>
-            <button class="history-btn" onclick="resetTripGoal()">🎯 設目標</button>
+            <button class="add-btn add-btn-trip" onclick="openCreateTripModal()">➕ 建立新旅程</button>
         </div>
 
-        <div id="trip-history-list"></div>
+        <div class="list-header">
+            <div class="list-title" style="color: var(--trip-blue);">我的所有旅程</div>
+        </div>
+        <div id="trip-list-container"></div>
     </div>
 
 
-    <!-- 6. DEBT MODULE VIEW -->
-    <div id="debt-view" class="view">
+    <!-- ==================== DEBT MODULE VIEW ==================== -->
+    <div id="view-debt" class="view">
         <div class="nav-bar">
-            <button class="back-btn" onclick="switchView('home-view')">← 返回主頁</button>
-            <div class="module-title">💳 債務管理</div>
-            <div style="width: 60px;"></div>
+            <button class="back-btn" onclick="switchView('dashboard')">⬅ 返回 Dashboard</button>
+            <div class="module-title">💸 欠債還錢天經地義</div>
+            <div style="width: 50px;"></div>
         </div>
 
         <div class="debt-tabs">
-            <button class="debt-tab-btn active" onclick="switchDebtTab('summary')">總結與清單</button>
-            <button class="debt-tab-btn" onclick="switchDebtTab('records')">還款/借入紀錄</button>
+            <div class="debt-tab-btn active" id="tab-payable" onclick="switchDebtTab('payable')">📤 應付款 (我欠人)</div>
+            <div class="debt-tab-btn" id="tab-receivable" onclick="switchDebtTab('receivable')">📥 應收款 (人欠我)</div>
         </div>
 
-        <div id="debt-section-summary" class="debt-section active">
-            <div class="kpi-container">
-                <div class="kpi-card">
-                    <div class="kpi-title">尚欠總額</div>
-                    <div class="kpi-value red" id="debt-total-remaining">$0.00</div>
-                </div>
-                <div class="kpi-card">
-                    <div class="kpi-title">已還總額</div>
-                    <div class="kpi-value" id="debt-total-paid">$0.00</div>
-                </div>
+        <div class="debt-section active" id="section-payable">
+            <div class="btn-group-primary">
+                <button class="add-btn add-btn-kmb" onclick="openPayableModal()">➕ 新增應付款 (我欠人)</button>
             </div>
-            <div class="btn-group-primary" style="margin-bottom: 16px;">
-                <button class="add-btn add-btn-success" onclick="openDebtModal()">+ 新增債務 / 記錄還款</button>
+            <div class="list-header" style="margin-top: 10px;">
+                <div class="list-title" style="color: var(--danger);">我欠別人的錢 (Payable)</div>
             </div>
-            <div id="debt-item-list"></div>
+            <div id="payable-records-list"></div>
         </div>
 
-        <div id="debt-section-records" class="debt-section">
-            <div class="btn-group-secondary" style="grid-template-columns: 1fr 1fr; margin-bottom: 16px;">
-                <button class="undo-btn" onclick="undoDebt()">↩ 復原上筆紀錄</button>
-                <button class="reset-btn" onclick="resetAllDebt()">重設所有資料</button>
+        <div class="debt-section" id="section-receivable">
+            <div class="btn-group-primary">
+                <button class="add-btn add-btn-success" onclick="openReceivableModal()">➕ 新增應收款 (人欠我)</button>
             </div>
-            <div id="debt-history-list"></div>
+            <div class="list-header" style="margin-top: 10px;">
+                <div class="list-title" style="color: var(--success);">別人欠我的錢 (Receivable)</div>
+            </div>
+            <div id="receivable-records-list"></div>
         </div>
     </div>
 
 
-    <!-- MODALS -->
+    <!-- ==================== MODALS ==================== -->
 
-    <!-- Food Modal -->
-    <div class="modal-overlay" id="modal-food">
-        <div class="modal">
-            <div class="modal-title">🍲 記錄一餐</div>
+    <!-- Edit Transit Modal -->
+    <div class="modal" id="edit-transit-modal">
+        <div class="modal-content">
+            <h2 style="font-size: 1.2rem; margin-bottom: 12px; text-align: center; color: var(--kmb-red);">編輯交通記錄</h2>
+            <input type="hidden" id="edit-transit-id">
             <div class="form-group">
                 <label>日期</label>
-                <input type="date" class="form-control" id="food-date">
+                <input type="date" id="edit-transit-date" class="form-control">
             </div>
             <div class="form-group">
-                <label>餐點名稱 / 備註</label>
-                <input type="text" class="form-control" id="food-name" placeholder="例如：公司附近茶餐廳午餐">
+                <label>乘搭 / 交易類別</label>
+                <select id="edit-transit-type" class="form-control">
+                    <option value="A">A - 九巴 / 龍運一般線 (免費)</option>
+                    <option value="B">B - 龍運機場 A 線 (27折)</option>
+                    <option value="C">C - 其他交通 (無優惠)</option>
+                    <option value="R">🎁 政府交通津貼 / 補貼報銷 (Reimbursement)</option>
+                </select>
             </div>
             <div class="form-group">
-                <label>實際花費 (HKD)</label>
-                <input type="number" step="0.1" class="form-control" id="food-spent" placeholder="0">
+                <label>路線 / 備註名稱</label>
+                <input type="text" id="edit-transit-name" class="form-control">
             </div>
-            <!-- 修改後：不分選項，每一餐 budget 固定為 100 -->
-            <input type="hidden" id="food-type" value="standard">
+            <div class="form-group">
+                <label>原價金額 / 回贈金額 ($)</label>
+                <input type="number" id="edit-transit-price" class="form-control" step="0.1">
+            </div>
             <div class="modal-actions">
-                <button class="modal-btn modal-btn-cancel" onclick="closeModal('food')">取消</button>
-                <button class="modal-btn modal-btn-submit" onclick="saveFood()">儲存</button>
+                <button class="btn-cancel" onclick="closeEditTransitModal()">取消</button>
+                <button class="btn-save btn-save-kmb" onclick="updateTransitRecord()">儲存修改</button>
             </div>
         </div>
     </div>
 
-    <!-- KMB Modal -->
-    <div class="modal-overlay" id="modal-kmb">
-        <div class="modal">
-            <div class="modal-title">🚌 記錄九巴搭乘</div>
+    <!-- Edit Food Modal -->
+    <div class="modal" id="edit-food-modal">
+        <div class="modal-content">
+            <h2 style="font-size: 1.2rem; margin-bottom: 12px; text-align: center; color: var(--primary);">編輯餐食記錄</h2>
+            <input type="hidden" id="edit-food-id">
             <div class="form-group">
                 <label>日期</label>
-                <input type="date" class="form-control" id="kmb-date">
+                <input type="date" id="edit-food-date" class="form-control">
+            </div>
+            <div class="form-group" style="display:none;">
+                <label>餐點類型</label>
+                <select id="edit-food-type" class="form-control">
+                    <option value="正常餐" selected>正常餐 ($100)</option>
+                </select>
             </div>
             <div class="form-group">
-                <label>路線 / 備註</label>
-                <input type="text" class="form-control" id="kmb-route" placeholder="例如：260X 返工">
+                <label>食咗啲咩</label>
+                <input type="text" id="edit-food-name" class="form-control">
             </div>
             <div class="form-group">
-                <label>平時單程車費 (HKD) [預設估算]</label>
-                <input type="number" step="0.1" class="form-control" id="kmb-fare" value="15.0">
+                <label>食咗幾多錢 ($)</label>
+                <input type="number" id="edit-food-cost" class="form-control" step="0.1">
             </div>
             <div class="modal-actions">
-                <button class="modal-btn modal-btn-cancel" onclick="closeModal('kmb')">取消</button>
-                <button class="modal-btn modal-btn-submit" onclick="saveKmb()">儲存</button>
+                <button class="btn-cancel" onclick="closeEditFoodModal()">取消</button>
+                <button class="btn-save" onclick="updateFoodRecord()">儲存修改</button>
             </div>
         </div>
     </div>
 
     <!-- Sport Modal -->
-    <div class="modal-overlay" id="modal-sport">
-        <div class="modal">
-            <div class="modal-title">🏃 記錄運動</div>
+    <div class="modal" id="sport-modal">
+        <div class="modal-content">
+            <h2 style="font-size: 1.2rem; margin-bottom: 12px; text-align: center; color: var(--sport-green);">🏃‍♂️ 記錄運動與洗費</h2>
+            <input type="hidden" id="sport-edit-id">
             <div class="form-group">
                 <label>日期</label>
-                <input type="date" class="form-control" id="sport-date">
+                <input type="date" id="sport-input-date" class="form-control">
             </div>
             <div class="form-group">
-                <label>運動類型</label>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                    <button type="button" class="type-btn active" id="sport-type-run" onclick="setSportType('跑步')">🏃 跑步</button>
-                    <button type="button" class="type-btn" id="sport-type-walk" onclick="setSportType('散步')">🚶 散步</button>
+                <label>運動類型 (可選擇最近或手動輸入)</label>
+                <div class="bookmark-row">
+                    <select id="sport-select-recent" class="form-control" onchange="fillSportType()">
+                        <option value="">-- 選擇最近運動類型 --</option>
+                    </select>
                 </div>
+                <input type="text" id="sport-input-type" class="form-control" placeholder="例：晨跑 / 健身房 / 游泳" style="margin-top: 8px;">
             </div>
             <div class="form-group">
-                <label>距離 (km)</label>
-                <input type="number" step="0.1" class="form-control" id="sport-dist" placeholder="5.0">
-            </div>
-            <div class="form-group">
-                <label>消耗卡路里 (kcal) [可選，留空自動計]</label>
-                <input type="number" class="form-control" id="sport-cal" placeholder="自動計算">
+                <label>洗費金額 ($)</label>
+                <input type="number" id="sport-input-cost" class="form-control" placeholder="例：50 (場地費/裝備等，無則填0)" step="0.1">
             </div>
             <div class="modal-actions">
-                <button class="modal-btn modal-btn-cancel" onclick="closeModal('sport')">取消</button>
-                <button class="modal-btn modal-btn-submit" onclick="saveSport()">儲存</button>
+                <button class="btn-cancel" onclick="closeSportModal()">取消</button>
+                <button class="btn-save btn-save-sport" onclick="saveSportRecord()">儲存記錄</button>
             </div>
         </div>
     </div>
 
     <!-- Love Modal -->
-    <div class="modal-overlay" id="modal-love">
-        <div class="modal">
-            <div class="modal-title">❤️ 記錄拍拖洗費</div>
+    <div class="modal" id="love-modal">
+        <div class="modal-content">
+            <h2 style="font-size: 1.2rem; margin-bottom: 12px; text-align: center; color: var(--love-purple);">💖 錢變成喜歡的形狀</h2>
+            <input type="hidden" id="love-edit-id">
             <div class="form-group">
                 <label>日期</label>
-                <input type="date" class="form-control" id="love-date">
+                <input type="date" id="love-input-date" class="form-control">
             </div>
             <div class="form-group">
-                <label>活動 / 項目名稱</label>
-                <input type="text" class="form-control" id="love-name" placeholder="例如：慶祝拍拖紀念日晚餐">
+                <label>消費類別 (Category)</label>
+                <div class="bookmark-row">
+                    <select id="love-select-category" class="form-control" onchange="fillLoveCategory()">
+                        <option value="">-- 選擇現有類別 --</option>
+                    </select>
+                    <button type="button" class="btn-sm-action" onclick="openCreateLoveCategoryModal()">➕ 新增類別</button>
+                </div>
+                <input type="text" id="love-input-type" class="form-control" placeholder="例：攝影器材 / 動漫周邊 / 遊戲" style="margin-top: 8px;">
             </div>
             <div class="form-group">
-                <label>花費金額 (HKD)</label>
-                <input type="number" step="0.1" class="form-control" id="love-spent" placeholder="0">
+                <label>具體項目 (What - 選填)</label>
+                <input type="text" id="love-input-name" class="form-control" placeholder="例：Sony 50mm 鏡頭">
+            </div>
+            <div class="form-group">
+                <label>金額 ($)</label>
+                <input type="number" id="love-input-money" class="form-control" placeholder="例：3500" step="0.1">
             </div>
             <div class="modal-actions">
-                <button class="modal-btn modal-btn-cancel" onclick="closeModal('love')">取消</button>
-                <button class="modal-btn modal-btn-submit" onclick="saveLove()">儲存</button>
+                <button class="btn-cancel" onclick="closeLoveModal()">取消</button>
+                <button class="btn-save btn-save-love" onclick="saveLoveRecord()">儲存記錄</button>
             </div>
         </div>
     </div>
 
-    <!-- Trip Modal -->
-    <div class="modal-overlay" id="modal-trip">
-        <div class="modal">
-            <div class="modal-title" id="trip-modal-title">✈️ 存入旅費</div>
+    <!-- Create Love Category Modal -->
+    <div class="modal" id="create-love-category-modal">
+        <div class="modal-content">
+            <h2 style="font-size: 1.2rem; margin-bottom: 12px; text-align: center; color: var(--love-purple);">➕ 新增消費類別</h2>
             <div class="form-group">
-                <label>日期</label>
-                <input type="date" class="form-control" id="trip-date">
+                <label>類別名稱</label>
+                <input type="text" id="lc-input-name" class="form-control" placeholder="例：攝影 / 閱讀 / 旅遊">
             </div>
-            <div class="form-group">
-                <label>備註 / 項目</label>
-                <input type="text" class="form-control" id="trip-name" placeholder="例如：月度儲蓄存入">
-            </div>
-            <div class="form-group">
-                <label>金額 (HKD)</label>
-                <input type="number" step="0.1" class="form-control" id="trip-amount" placeholder="0">
+            <div style="margin-top: 14px; margin-bottom: 10px;">
+                <label style="font-size: 0.85rem; font-weight: 700;">現有類別列表：</label>
+                <div id="love-category-manage-list" style="margin-top: 8px; max-height: 150px; overflow-y: auto;"></div>
             </div>
             <div class="modal-actions">
-                <button class="modal-btn modal-btn-cancel" onclick="closeModal('trip')">取消</button>
-                <button class="modal-btn modal-btn-submit" onclick="saveTrip()">儲存</button>
+                <button class="btn-cancel" onclick="closeCreateLoveCategoryModal()">返回</button>
+                <button class="btn-save btn-save-love" onclick="saveNewLoveCategory()">新增類別</button>
             </div>
         </div>
     </div>
 
-    <!-- Debt Modal -->
-    <div class="modal-overlay" id="modal-debt">
-        <div class="modal">
-            <div class="modal-title">💳 新增債務 / 記錄還款</div>
+    <!-- Create Trip Modal -->
+    <div class="modal" id="create-trip-modal">
+        <div class="modal-content">
+            <h2 style="font-size: 1.2rem; margin-bottom: 12px; text-align: center; color: var(--trip-blue);">✈️ 建立新旅程</h2>
             <div class="form-group">
-                <label>操作類型</label>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                    <button type="button" class="type-btn active" id="debt-op-add" onclick="setDebtOp('new')">➕ 新增欠款項目</button>
-                    <button type="button" class="type-btn" id="debt-op-pay" onclick="setDebtOp('pay')">💸 記錄還款</button>
+                <label>旅程名稱</label>
+                <input type="text" id="trip-input-title" class="form-control" placeholder="例：2026 沖繩之旅 / 韓國首爾行">
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeCreateTripModal()">取消</button>
+                <button class="btn-save btn-save-trip" onclick="saveNewTrip()">建立旅程</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trip Detail Modal -->
+    <div class="modal" id="trip-detail-modal">
+        <div class="modal-content" style="max-width: 480px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                <h2 id="trip-detail-modal-title" style="font-size: 1.2rem; color: var(--trip-blue);">旅程詳情</h2>
+                <button class="btn-cancel" onclick="closeTripDetailModal()" style="padding: 4px 10px;">關閉</button>
+            </div>
+
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 12px; margin-bottom: 14px;">
+                <div style="font-weight: 700; font-size: 0.9rem; margin-bottom: 8px; color: var(--primary);">💱 匯率對換表 (兌 HKD)</div>
+                <div id="exchange-rate-list" style="margin-bottom: 8px; max-height: 100px; overflow-y: auto;"></div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 6px;">
+                    <input type="text" id="ex-currency" class="form-control" placeholder="幣別 (例: JPY)" style="padding: 8px; font-size: 0.85rem;">
+                    <input type="number" id="ex-rate" class="form-control" placeholder="1外幣=幾多HKD" step="0.0001" style="padding: 8px; font-size: 0.85rem;">
+                    <button type="button" class="btn-sm-action" onclick="saveExchangeRate()" style="background: var(--trip-blue); color: white;">新增匯率</button>
                 </div>
             </div>
-            <div class="form-group" id="debt-name-group">
-                <label>債務名稱 / 對象</label>
-                <input type="text" class="form-control" id="debt-name" placeholder="例如：信用卡分期 / 朋友借款">
+
+            <div id="trip-freeze-status-bar" style="background: #e0f2fe; padding: 10px; border-radius: 8px; margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem;">
+                <span id="trip-freeze-text">狀態：進行中 (匯率即時更新)</span>
+                <button id="trip-freeze-btn" class="btn-sm-action" onclick="toggleTripFreeze()" style="background: var(--primary); color: white;">🔒 凍結旅程金額</button>
             </div>
-            <div class="form-group" id="debt-select-group" style="display:none;">
-                <label>選擇債務項目</label>
-                <select class="form-control" id="debt-select-id"></select>
+
+            <div style="margin-bottom: 14px;">
+                <button class="add-btn add-btn-trip" style="padding: 10px; font-size: 0.9rem;" onclick="openTripExpenseModal()">➕ 記一筆旅程開支</button>
             </div>
-            <div class="form-group">
-                <label>金額 (HKD)</label>
-                <input type="number" step="0.1" class="form-control" id="debt-amount" placeholder="0">
+
+            <div class="list-header">
+                <div class="list-title" style="font-size: 0.95rem;">本旅程記帳明細</div>
             </div>
+            <div id="trip-expense-list" style="max-height: 180px; overflow-y: auto;"></div>
+        </div>
+    </div>
+
+    <!-- Trip Expense Modal -->
+    <div class="modal" id="trip-expense-modal">
+        <div class="modal-content">
+            <h2 style="font-size: 1.2rem; margin-bottom: 12px; text-align: center; color: var(--trip-blue);">➕ 記一筆旅程開支</h2>
+            <input type="hidden" id="te-edit-id">
             <div class="form-group">
                 <label>日期</label>
-                <input type="date" class="form-control" id="debt-date">
+                <input type="date" id="te-input-date" class="form-control">
+            </div>
+            <div class="form-group">
+                <label>活動類型 (Bookmark)</label>
+                <div class="bookmark-row">
+                    <select id="te-select-bookmark" class="form-control" onchange="fillTripBookmark()">
+                        <option value="">-- 選擇常用活動類型 --</option>
+                    </select>
+                    <button type="button" class="btn-sm-action" onclick="openTripBookmarkManage()">➕ 管理類型</button>
+                </div>
+                <input type="text" id="te-input-activity" class="form-control" placeholder="例：美食 / 住宿 / 購物" style="margin-top: 8px;">
+            </div>
+            <div class="form-group" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div>
+                    <label>外幣金額</label>
+                    <input type="number" id="te-input-amount" class="form-control" placeholder="例：5000" step="0.1">
+                </div>
+                <div>
+                    <label>幣別 (Currency)</label>
+                    <input type="text" id="te-input-currency" class="form-control" placeholder="例：JPY">
+                </div>
             </div>
             <div class="modal-actions">
-                <button class="modal-btn modal-btn-cancel" onclick="closeModal('debt')">取消</button>
-                <button class="modal-btn modal-btn-submit" onclick="saveDebt()">儲存</button>
+                <button class="btn-cancel" onclick="closeTripExpenseModal()">取消</button>
+                <button class="btn-save btn-save-trip" onclick="saveTripExpense()">儲存開支</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trip Bookmark Manage Modal -->
+    <div class="modal" id="trip-bookmark-modal">
+        <div class="modal-content">
+            <h2 style="font-size: 1.2rem; margin-bottom: 12px; text-align: center; color: var(--trip-blue);">📌 管理旅程活動類型</h2>
+            <div class="form-group">
+                <label>新活動類型名稱</label>
+                <input type="text" id="tbm-input-name" class="form-control" placeholder="例：美食 / 住宿 / 購物">
+            </div>
+            <button type="button" class="add-btn add-btn-trip" style="padding: 10px; font-size: 0.9rem; margin-bottom: 14px;" onclick="saveTripBookmarkType()">新增類型</button>
+            <div style="margin-top: 10px;">
+                <label style="font-size: 0.85rem; font-weight: 700;">現有活動類型：</label>
+                <div id="trip-bookmark-list" style="margin-top: 8px; max-height: 150px; overflow-y: auto;"></div>
+            </div>
+            <div style="margin-top: 16px;">
+                <button class="btn-cancel" style="width: 100%;" onclick="closeTripBookmarkManage()">完成返回</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exchange Rate Missing Prompt Modal -->
+    <div class="modal" id="exchange-prompt-modal">
+        <div class="modal-content">
+            <h2 style="font-size: 1.2rem; margin-bottom: 12px; text-align: center; color: var(--danger);">⚠️ 缺少匯率資料</h2>
+            <p id="exchange-prompt-msg" style="font-size: 0.9rem; margin-bottom: 14px; text-align: center; color: #4b5563;"></p>
+            <div class="form-group">
+                <label id="ex-prompt-label">請輸入 1 該外幣 = 幾多 HKD：</label>
+                <input type="number" id="ex-prompt-value" class="form-control" placeholder="例：0.052" step="0.0001">
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeExchangePromptModal()">取消</button>
+                <button class="btn-save btn-save-trip" onclick="saveMissingExchangeRate()">儲存並繼續</button>
             </div>
         </div>
     </div>
 
 
-    <!-- CORE SCRIPT LOGIC -->
+    <!-- Payable Input Modal -->
+    <div class="modal" id="payable-modal">
+        <div class="modal-content">
+            <h2 style="font-size: 1.2rem; margin-bottom: 12px; text-align: center; color: var(--kmb-red);">新增應付款 (我欠人)</h2>
+            <div class="form-group">
+                <label>對象 (欠誰)</label>
+                <input type="text" id="payable-input-who" class="form-control" placeholder="例：Peter / 信用卡公司">
+            </div>
+            <div class="form-group">
+                <label>金額 ($)</label>
+                <input type="number" id="payable-input-money" class="form-control" placeholder="例：500" step="0.1">
+            </div>
+            <div class="form-group">
+                <label>原因 (為什麼)</label>
+                <input type="text" id="payable-input-why" class="form-control" placeholder="例：夾份食飯 / 借貸">
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closePayableModal()">取消</button>
+                <button class="btn-save btn-save-kmb" onclick="savePayableRecord()">儲存記錄</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receivable Input Modal -->
+    <div class="modal" id="receivable-modal">
+        <div class="modal-content">
+            <h2 style="font-size: 1.2rem; margin-bottom: 12px; text-align: center; color: var(--success);">新增應收款 (人欠我)</h2>
+            <div class="form-group">
+                <label>對象 (誰欠我)</label>
+                <input type="text" id="receivable-input-who" class="form-control" placeholder="例：Mary / 朋友">
+            </div>
+            <div class="form-group">
+                <label>金額 ($)</label>
+                <input type="number" id="receivable-input-money" class="form-control" placeholder="例：300" step="0.1">
+            </div>
+            <div class="form-group">
+                <label>原因 (為什麼)</label>
+                <input type="text" id="receivable-input-why" class="form-control" placeholder="例：代付車票 / 借錢">
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeReceivableModal()">取消</button>
+                <button class="btn-save btn-save-success" onclick="saveReceivableRecord()">儲存記錄</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Transit Input Modal -->
+    <div class="modal" id="transit-modal">
+        <div class="modal-content">
+            <h2 style="font-size: 1.2rem; margin-bottom: 12px; text-align: center; color: var(--kmb-red);">記一程車費 (手動 / 書籤記錄)</h2>
+            <div class="form-group">
+                <label>選擇記錄月份 / 日期</label>
+                <div style="display: flex; gap: 8px;">
+                    <select id="transit-cycle-jump" class="form-control" style="flex: 1;" onchange="onTransitCycleJumpChange()">
+                    </select>
+                </div>
+                <input type="date" id="transit-input-date" class="form-control" style="margin-top: 8px;">
+            </div>
+            <div class="form-group">
+                <label>📌 選擇常用書籤 (Bookmark)</label>
+                <div class="bookmark-row">
+                    <select id="transit-select-bookmark" class="form-control" onchange="fillFromBookmark()">
+                        <option value="">-- 手動輸入全新路線 / 津貼 --</option>
+                    </select>
+                    <button type="button" class="btn-sm-action" onclick="openCreateBookmarkModal()">➕ 新增書籤</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>乘搭 / 交易類別</label>
+                <select id="transit-manual-type" class="form-control" onchange="calculateTransitSavingsPreview()">
+                    <option value="A">A - 九巴 / 龍運一般線 (免費)</option>
+                    <option value="B">B - 龍運機場 A 線 (27折)</option>
+                    <option value="C">C - 其他交通 (無優惠)</option>
+                    <option value="R">🎁 政府交通津貼 / 補貼報銷 (Reimbursement)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>路線 / 備註名稱</label>
+                <input type="text" id="transit-input-name" class="form-control" placeholder="例：968 / 268C / 政府補貼">
+            </div>
+            <div class="form-group">
+                <label id="lbl-transit-price">原價金額 / 回贈金額 ($)</label>
+                <input type="number" id="transit-input-price" class="form-control" placeholder="例：25.7" oninput="calculateTransitSavingsPreview()" step="0.1">
+            </div>
+            <div class="preview-box">
+                <div class="preview-row">
+                    <span id="lbl-preview-raw">原價車費：</span>
+                    <strong id="preview-raw" style="color: var(--text);">$0.0</strong>
+                </div>
+                <div class="preview-row">
+                    <span id="lbl-preview-pay">實際支付車費：</span>
+                    <strong id="preview-pay" style="color: var(--primary);">$0.0</strong>
+                </div>
+                <div class="preview-row">
+                    <span id="lbl-preview-saved">呢程慳咗：</span>
+                    <strong id="preview-saved" style="color: var(--success);">$0.0</strong>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeTransitModal()">取消</button>
+                <button class="btn-save btn-save-kmb" onclick="saveTransitRecord()">儲存記錄</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Bookmark Modal -->
+    <div class="modal" id="create-bookmark-modal">
+        <div class="modal-content">
+            <h2 style="font-size: 1.2rem; margin-bottom: 12px; text-align: center; color: var(--primary);">📌 新增交通書籤</h2>
+            <div class="form-group">
+                <label>書籤顯示名稱 (Name)</label>
+                <input type="text" id="bm-input-name" class="form-control" placeholder="例：968 (元朗 - 銅鑼灣)">
+            </div>
+            <div class="form-group">
+                <label>交易類別 (Category)</label>
+                <select id="bm-input-type" class="form-control">
+                    <option value="A">A - 九巴 / 龍運一般線 (免費)</option>
+                    <option value="B">B - 龍運機場 A 線 (27折)</option>
+                    <option value="C">C - 其他交通 (無優惠)</option>
+                    <option value="R">🎁 政府交通津貼 / 補貼報銷 (Reimbursement)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>原價 / 回贈金額 ($)</label>
+                <input type="number" id="bm-input-price" class="form-control" placeholder="例：25.7" step="0.1">
+            </div>
+            <div style="margin-top: 14px; margin-bottom: 10px;">
+                <label style="font-size: 0.85rem; font-weight: 700;">現有常用書籤列表：</label>
+                <div id="bookmark-manage-list" style="margin-top: 8px; max-height: 150px; overflow-y: auto;"></div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeCreateBookmarkModal()">返回記帳</button>
+                <button class="btn-save" onclick="saveNewBookmark()">儲存新書籤</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transit History Modal -->
+    <div class="modal" id="transit-history-modal">
+        <div class="modal-content">
+            <h2 style="font-size: 1.2rem; margin-bottom: 16px; text-align: center;">📜 歷屆月票紀錄</h2>
+            <div id="transit-history-list"></div>
+            <div style="margin-top: 16px;">
+                <button class="btn-cancel" style="width: 100%;" onclick="closeTransitHistoryModal()">關閉</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Food Input Modal -->
+    <div class="modal" id="food-modal">
+        <div class="modal-content">
+            <h2 style="font-size: 1.2rem; margin-bottom: 16px; text-align: center;">新增餐食記錄</h2>
+            <div class="form-group">
+                <label>選擇記錄月份 / 日期</label>
+                <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                    <select id="food-cycle-jump" class="form-control" style="flex: 1;" onchange="onFoodCycleJumpChange()">
+                    </select>
+                </div>
+                <input type="date" id="food-input-date" class="form-control">
+            </div>
+            <div class="form-group" style="display:none;">
+                <label>餐點類型</label>
+                <div class="type-selector" style="display:grid; grid-template-columns: 1fr; gap:8px;">
+                    <div class="type-btn active" id="btn-simple" onclick="selectFoodType('正常餐')">正常餐 ($100)</div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>食咗啲咩</label>
+                <input type="text" id="food-input-name" class="form-control" placeholder="例：日式燒肉放題">
+            </div>
+            <div class="form-group">
+                <label>食咗幾多錢 ($)</label>
+                <input type="number" id="food-input-cost" class="form-control" placeholder="例：180">
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeFoodModal()">取消</button>
+                <button class="btn-save" onclick="saveFoodRecord()">儲存記錄</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Food History Modal -->
+    <div class="modal" id="food-history-modal">
+        <div class="modal-content">
+            <h2 style="font-size: 1.2rem; margin-bottom: 16px; text-align: center;">📜 歷屆食幾多慳幾多週期紀錄</h2>
+            <div id="food-history-list"></div>
+            <div style="margin-top: 16px;">
+                <button class="btn-cancel" style="width: 100%;" onclick="closeFoodHistoryModal()">關閉</button>
+            </div>
+        </div>
+    </div>
+
+
     <script>
-        // State Management
-        let currentYear = 2026;
-        let currentMonth = 9; // 1-12
-        let activeCalModule = 'food';
-        let calYear = 2026;
-        let calMonth = 9;
+        // NAVIGATION CONTROL
+        function switchView(viewName) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(`view-${viewName}`).classList.add('active');
+            updateDashboardOverview();
+            if (viewName === 'sport') renderSportCalendar();
+        }
 
-        // Data Storage Schema
-        let db = {
-            food: [], // {id, date, name, spent, saved, type}
-            kmb: [],  // {id, date, route, fare}
-            sport: [], // {id, date, type, dist, cal}
-            love: [],  // {id, date, name, spent}
-            trip: [],  // {id, date, name, amount}
-            tripGoal: 10000,
-            debt: [],  // {id, name, initialAmount, remainingAmount}
-            debtRecords: [] // {id, debtId, date, type('new'|'pay'), amount, name}
-        };
+        // ==================== DASHBOARD YEAR & MONTH SELECTION & OVERVIEW ====================
+        let currentDashboardYear = new Date().getFullYear().toString();
+        let currentDashboardMonth = String(new Date().getMonth() + 1).padStart(2, '0');
 
-        // Initialize on load
-        window.onload = function() {
-            loadFromLocalStorage();
-            initMonthSelector();
-            updateAllViews();
-            setDefaultDates();
-        };
-
-        function setDefaultDates() {
-            const todayStr = new Date().toISOString().split('T')[0];
-            ['food-date', 'kmb-date', 'sport-date', 'love-date', 'trip-date', 'debt-date'].forEach(id => {
-                const el = document.getElementById(id);
-                if(el) el.value = todayStr;
+        function initDashboardDateSelectors() {
+            // 自動初始化按鈕的 active 狀態配合當日日期
+            document.querySelectorAll('.year-btn').forEach(btn => {
+                if (btn.getAttribute('onclick').includes(`'${currentDashboardYear}'`)) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
             });
-            document.getElementById('current-date-badge').innerText = '📅 今日：' + todayStr;
+            const yearLabel = document.getElementById('current-selected-year-label');
+            if (yearLabel) yearLabel.innerText = `${currentDashboardYear}年`;
+
+            document.querySelectorAll('.month-select-btn').forEach(btn => {
+                if (btn.getAttribute('onclick').includes(`'${currentDashboardMonth}'`)) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+            const monthLabel = document.getElementById('current-selected-month-label');
+            if (monthLabel) monthLabel.innerText = `${parseInt(currentDashboardMonth)}月`;
         }
 
-        // Local Storage Helpers
-        function saveToLocalStorage() {
-            localStorage.setItem('maladouka_db', JSON.stringify(db));
+        function selectDashboardYear(yearVal, btnEl) {
+            currentDashboardYear = yearVal;
+            document.querySelectorAll('.year-btn').forEach(b => b.classList.remove('active'));
+            btnEl.classList.add('active');
+            
+            const labelEl = document.getElementById('current-selected-year-label');
+            if (labelEl) {
+                labelEl.innerText = yearVal === 'ALL' ? '全部年份' : `${yearVal}年`;
+            }
+            updateDashboardOverview();
         }
 
-        function loadFromLocalStorage() {
-            const data = localStorage.getItem('maladouka_db');
-            if(data) {
-                try {
-                    db = JSON.parse(data);
-                    if(!db.debt) db.debt = [];
-                    if(!db.debtRecords) db.debtRecords = [];
-                    if(!db.tripGoal) db.tripGoal = 10000;
-                } catch(e) {
-                    console.error("Failed to parse local storage", e);
+        function selectDashboardMonth(monthVal, btnEl) {
+            currentDashboardMonth = monthVal;
+            document.querySelectorAll('.month-select-btn').forEach(b => b.classList.remove('active'));
+            btnEl.classList.add('active');
+            
+            const labelEl = document.getElementById('current-selected-month-label');
+            if (labelEl) {
+                labelEl.innerText = monthVal === 'ALL' ? '全部月份' : `${parseInt(monthVal)}月`;
+            }
+            updateDashboardOverview();
+        }
+
+        function matchSelectedDate(dateStr) {
+            if (!dateStr) return false;
+            const parts = dateStr.split('-');
+            if (parts.length < 2) return false;
+            
+            const yearPart = parts[0];
+            const monthPart = parts[1];
+
+            const yearMatch = (currentDashboardYear === 'ALL' || yearPart === currentDashboardYear);
+            const monthMatch = (currentDashboardMonth === 'ALL' || monthPart === currentDashboardMonth);
+
+            return yearMatch && monthMatch;
+        }
+
+        function updateCurrentDateDisplay() {
+            const dateEl = document.getElementById('current-date-display');
+            if (dateEl) {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = now.getMonth() + 1;
+                const day = now.getDate();
+                const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+                const weekday = weekdays[now.getDay()];
+                dateEl.innerHTML = `📅 ${year}年${month}月${day}日 (${weekday})`;
+            }
+        }
+
+
+        // ==================== SPORT MODULE LOGIC ====================
+        let sportRecords = JSON.parse(localStorage.getItem('sport_records_v1') || '[]');
+        let sportCurrentYear = new Date().getFullYear();
+        let sportCurrentMonth = new Date().getMonth();
+
+        function openSportModal(editId = null) {
+            document.getElementById('sport-edit-id').value = editId || '';
+            if (editId) {
+                const rec = sportRecords.find(r => r.id === editId);
+                if (rec) {
+                    document.getElementById('sport-input-date').value = rec.date;
+                    document.getElementById('sport-input-type').value = rec.type;
+                    document.getElementById('sport-input-cost').value = rec.cost;
+                }
+            } else {
+                document.getElementById('sport-input-date').valueAsDate = new Date();
+                document.getElementById('sport-input-type').value = '';
+                document.getElementById('sport-input-cost').value = '';
+            }
+            populateSportRecentDropdown();
+            document.getElementById('sport-modal').classList.add('active');
+        }
+
+        function closeSportModal() {
+            document.getElementById('sport-modal').classList.remove('active');
+        }
+
+        function populateSportRecentDropdown() {
+            const selectEl = document.getElementById('sport-select-recent');
+            if (!selectEl) return;
+            const uniqueTypes = [...new Set(sportRecords.map(r => r.type))];
+            selectEl.innerHTML = '<option value="">-- 選擇最近運動類型 --</option>';
+            uniqueTypes.forEach(t => {
+                selectEl.innerHTML += `<option value="${t}">${t}</option>`;
+            });
+        }
+
+        function fillSportType() {
+            const val = document.getElementById('sport-select-recent').value;
+            if (val) {
+                document.getElementById('sport-input-type').value = val;
+            }
+        }
+
+        function saveSportRecord() {
+            const editId = document.getElementById('sport-edit-id').value;
+            const date = document.getElementById('sport-input-date').value;
+            const type = document.getElementById('sport-input-type').value.trim();
+            const cost = parseFloat(document.getElementById('sport-input-cost').value);
+
+            if (!date || !type || isNaN(cost)) {
+                alert('請完整填寫日期、運動類型與金額！');
+                return;
+            }
+
+            if (editId) {
+                const idx = sportRecords.findIndex(r => r.id == editId);
+                if (idx !== -1) {
+                    sportRecords[idx].date = date;
+                    sportRecords[idx].type = type;
+                    sportRecords[idx].cost = cost;
+                }
+            } else {
+                const newRecord = {
+                    id: Date.now(),
+                    date: date,
+                    type: type,
+                    cost: cost
+                };
+                sportRecords.unshift(newRecord);
+            }
+
+            localStorage.setItem('sport_records_v1', JSON.stringify(sportRecords));
+            closeSportModal();
+            renderSport();
+            updateDashboardOverview();
+        }
+
+        function deleteSportRecord(id) {
+            if (confirm('確定要刪除這筆運動記錄嗎？')) {
+                sportRecords = sportRecords.filter(r => r.id !== id);
+                localStorage.setItem('sport_records_v1', JSON.stringify(sportRecords));
+                renderSport();
+                updateDashboardOverview();
+            }
+        }
+
+        function changeSportMonth(direction) {
+            sportCurrentMonth += direction;
+            if (sportCurrentMonth > 11) {
+                sportCurrentMonth = 0;
+                sportCurrentYear += 1;
+            } else if (sportCurrentMonth < 0) {
+                sportCurrentMonth = 11;
+                sportCurrentYear -= 1;
+            }
+            renderSportCalendar();
+        }
+
+        function renderSportCalendar() {
+            const titleEl = document.getElementById('sport-cal-title');
+            const gridEl = document.getElementById('sport-calendar-days');
+            if (!titleEl || !gridEl) return;
+
+            titleEl.innerText = `${sportCurrentYear}年${sportCurrentMonth + 1}月`;
+
+            const firstDayIndex = new Date(sportCurrentYear, sportCurrentMonth, 1).getDay();
+            const totalDays = new Date(sportCurrentYear, sportCurrentMonth + 1, 0).getDate();
+            const prevTotalDays = new Date(sportCurrentYear, sportCurrentMonth, 0).getDate();
+
+            let html = '';
+
+            for (let i = firstDayIndex - 1; i >= 0; i--) {
+                const dayNum = prevTotalDays - i;
+                html += `<div class="cal-day other-month"><div class="cal-day-num">${dayNum}</div></div>`;
+            }
+
+            for (let d = 1; d <= totalDays; d++) {
+                const monthStr = String(sportCurrentMonth + 1).padStart(2, '0');
+                const dayStr = String(d).padStart(2, '0');
+                const dateKey = `${sportCurrentYear}-${monthStr}-${dayStr}`;
+
+                const dayRecords = sportRecords.filter(r => r.date === dateKey);
+                let badges = '';
+                dayRecords.forEach(r => {
+                    badges += `<span class="cal-badge" title="${r.type} ($${r.cost})">${r.type} $${r.cost}</span>`;
+                });
+
+                html += `
+                    <div class="cal-day">
+                        <div class="cal-day-num">${d}</div>
+                        ${badges}
+                    </div>
+                `;
+            }
+
+            gridEl.innerHTML = html;
+        }
+
+        function renderSport() {
+            renderSportCalendar();
+            const listEl = document.getElementById('sport-records-list');
+            if (!listEl) return;
+
+            if (sportRecords.length === 0) {
+                listEl.innerHTML = '<div style="text-align:center; color:#9ca3af; padding:20px;">暫無運動記錄</div>';
+            } else {
+                listEl.innerHTML = sportRecords.map(r => `
+                    <div class="record-card">
+                        <div class="record-info">
+                            <div><span class="badge badge-sport">${r.type}</span> 運動消脂</div>
+                            <div>日期：${r.date}</div>
+                        </div>
+                        <div class="record-amount">
+                            <div class="record-cost" style="color: var(--sport-green);">$${r.cost.toFixed(1)}</div>
+                            <div>
+                                <button class="btn-edit-item" onclick="openSportModal(${r.id})">編輯</button>
+                                <button class="bookmark-del-btn" onclick="deleteSportRecord(${r.id})" style="margin-top:4px;">刪除</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+
+        // ==================== LOVE MODULE LOGIC ====================
+        const DEFAULT_LOVE_CATEGORIES = ['攝影器材', '動漫周邊', '遊戲娛樂', '手作藝文', '心頭好收藏'];
+        let loveCategories = JSON.parse(localStorage.getItem('love_categories_v1') || JSON.stringify(DEFAULT_LOVE_CATEGORIES));
+        let loveRecords = JSON.parse(localStorage.getItem('love_records_v1') || '[]');
+
+        function openLoveModal(editId = null) {
+            document.getElementById('love-edit-id').value = editId || '';
+            if (editId) {
+                const rec = loveRecords.find(r => r.id === editId);
+                if (rec) {
+                    document.getElementById('love-input-date').value = rec.date;
+                    document.getElementById('love-input-type').value = rec.type;
+                    document.getElementById('love-input-name').value = rec.name;
+                    document.getElementById('love-input-money').value = rec.money;
+                }
+            } else {
+                document.getElementById('love-input-date').valueAsDate = new Date();
+                document.getElementById('love-input-type').value = '';
+                document.getElementById('love-input-name').value = '';
+                document.getElementById('love-input-money').value = '';
+            }
+            populateLoveCategoryDropdown();
+            document.getElementById('love-modal').classList.add('active');
+        }
+
+        function closeLoveModal() {
+            document.getElementById('love-modal').classList.remove('active');
+        }
+
+        function populateLoveCategoryDropdown() {
+            const selectEl = document.getElementById('love-select-category');
+            if (!selectEl) return;
+            selectEl.innerHTML = '<option value="">-- 選擇現有類別 --</option>';
+            loveCategories.forEach(cat => {
+                selectEl.innerHTML += `<option value="${cat}">${cat}</option>`;
+            });
+        }
+
+        function fillLoveCategory() {
+            const val = document.getElementById('love-select-category').value;
+            if (val) {
+                document.getElementById('love-input-type').value = val;
+            }
+        }
+
+        function openCreateLoveCategoryModal() {
+            renderLoveCategoryManageList();
+            document.getElementById('create-love-category-modal').classList.add('active');
+        }
+
+        function closeCreateLoveCategoryModal() {
+            document.getElementById('create-love-category-modal').classList.remove('active');
+            populateLoveCategoryDropdown();
+        }
+
+        function saveNewLoveCategory() {
+            const name = document.getElementById('lc-input-name').value.trim();
+            if (!name) {
+                alert('請輸入類別名稱！');
+                return;
+            }
+            if (!loveCategories.includes(name)) {
+                loveCategories.push(name);
+                localStorage.setItem('love_categories_v1', JSON.stringify(loveCategories));
+            }
+            document.getElementById('lc-input-name').value = '';
+            renderLoveCategoryManageList();
+            populateLoveCategoryDropdown();
+        }
+
+        function deleteLoveCategory(cat) {
+            loveCategories = loveCategories.filter(c => c !== cat);
+            localStorage.setItem('love_categories_v1', JSON.stringify(loveCategories));
+            renderLoveCategoryManageList();
+            populateLoveCategoryDropdown();
+        }
+
+        function renderLoveCategoryManageList() {
+            const listEl = document.getElementById('love-category-manage-list');
+            if (!listEl) return;
+            if (loveCategories.length === 0) {
+                listEl.innerHTML = '<div style="color:#9ca3af; font-size:0.8rem; text-align:center;">無自定義類別</div>';
+                return;
+            }
+            listEl.innerHTML = loveCategories.map(cat => `
+                <div class="bookmark-item">
+                    <span style="font-size: 0.82rem; font-weight:600;">${cat}</span>
+                    <button type="button" class="bookmark-del-btn" onclick="deleteLoveCategory('${cat}')">刪除</button>
+                </div>
+            `).join('');
+        }
+
+        function saveLoveRecord() {
+            const editId = document.getElementById('love-edit-id').value;
+            const date = document.getElementById('love-input-date').value;
+            const type = document.getElementById('love-input-type').value.trim();
+            const name = document.getElementById('love-input-name').value.trim();
+            const money = parseFloat(document.getElementById('love-input-money').value);
+
+            if (!date || !type || isNaN(money)) {
+                alert('請完整填寫日期、類別與金額！');
+                return;
+            }
+
+            if (editId) {
+                const idx = loveRecords.findIndex(r => r.id == editId);
+                if (idx !== -1) {
+                    loveRecords[idx].date = date;
+                    loveRecords[idx].type = type;
+                    loveRecords[idx].name = name || type;
+                    loveRecords[idx].money = money;
+                }
+            } else {
+                const newRecord = {
+                    id: Date.now(),
+                    date: date,
+                    type: type,
+                    name: name || type,
+                    money: money
+                };
+                loveRecords.unshift(newRecord);
+            }
+
+            localStorage.setItem('love_records_v1', JSON.stringify(loveRecords));
+            closeLoveModal();
+            renderLove();
+            updateDashboardOverview();
+        }
+
+        function deleteLoveRecord(id) {
+            if (confirm('確定要刪除這筆記錄嗎？')) {
+                loveRecords = loveRecords.filter(r => r.id !== id);
+                localStorage.setItem('love_records_v1', JSON.stringify(loveRecords));
+                renderLove();
+                updateDashboardOverview();
+            }
+        }
+
+        function renderLove() {
+            const listEl = document.getElementById('love-records-list');
+            if (!listEl) return;
+
+            if (loveRecords.length === 0) {
+                listEl.innerHTML = '<div style="text-align:center; color:#9ca3af; padding:20px;">暫無心頭好記錄</div>';
+            } else {
+                listEl.innerHTML = loveRecords.map(r => `
+                    <div class="record-card">
+                        <div class="record-info">
+                            <div><span class="badge badge-love">${r.type}</span> ${r.name}</div>
+                            <div>日期：${r.date}</div>
+                        </div>
+                        <div class="record-amount">
+                            <div class="record-cost" style="color: var(--love-purple);">$${r.money.toFixed(1)}</div>
+                            <div>
+                                <button class="btn-edit-item" onclick="openLoveModal(${r.id})">編輯</button>
+                                <button class="bookmark-del-btn" onclick="deleteLoveRecord(${r.id})" style="margin-top:4px;">刪除</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+
+        // ==================== TRIP MODULE LOGIC ====================
+        const DEFAULT_TRIP_BOOKMARKS = ['美食', '住宿', '交通', '門票', '購物', '手信'];
+        let trips = JSON.parse(localStorage.getItem('trips_v1') || '[]');
+        let tripBookmarks = JSON.parse(localStorage.getItem('trip_bookmarks_v1') || JSON.stringify(DEFAULT_TRIP_BOOKMARKS));
+        let activeTripId = null;
+        let activeExchangeRates = {}; 
+        let activeTripFrozen = false;
+
+        function openCreateTripModal() {
+            document.getElementById('trip-input-title').value = '';
+            document.getElementById('create-trip-modal').classList.add('active');
+        }
+
+        function closeCreateTripModal() {
+            document.getElementById('create-trip-modal').classList.remove('active');
+        }
+
+        function saveNewTrip() {
+            const title = document.getElementById('trip-input-title').value.trim();
+            if (!title) {
+                alert('請輸入旅程名稱！');
+                return;
+            }
+            const newTrip = {
+                id: Date.now(),
+                title: title,
+                frozen: false,
+                exchangeRates: {},
+                expenses: []
+            };
+            trips.unshift(newTrip);
+            localStorage.setItem('trips_v1', JSON.stringify(trips));
+            closeCreateTripModal();
+            renderTrips();
+            updateDashboardOverview();
+        }
+
+        function deleteTrip(tripId) {
+            if (confirm('確定要刪除整個旅程及所有相關記帳嗎？')) {
+                trips = trips.filter(t => t.id !== tripId);
+                localStorage.setItem('trips_v1', JSON.stringify(trips));
+                renderTrips();
+                updateDashboardOverview();
+            }
+        }
+
+        function openTripDetail(tripId) {
+            activeTripId = tripId;
+            const trip = trips.find(t => t.id === tripId);
+            if (!trip) return;
+
+            document.getElementById('trip-detail-modal-title').innerText = `✈️ ${trip.title}`;
+            activeExchangeRates = trip.exchangeRates || {};
+            activeTripFrozen = !!trip.frozen;
+
+            updateTripFreezeUI();
+            renderExchangeRateList();
+            renderTripExpenseList();
+            document.getElementById('trip-detail-modal').classList.add('active');
+        }
+
+        function closeTripDetailModal() {
+            document.getElementById('trip-detail-modal').classList.remove('active');
+            activeTripId = null;
+            renderTrips();
+            updateDashboardOverview();
+        }
+
+        function updateTripFreezeUI() {
+            const textEl = document.getElementById('trip-freeze-text');
+            const btnEl = document.getElementById('trip-freeze-btn');
+            if (!textEl || !btnEl) return;
+
+            if (activeTripFrozen) {
+                textEl.innerText = '狀態：已凍結 (匯率已鎖定)';
+                textEl.style.color = '#1e40af';
+                btnEl.innerText = '🔓 解除凍結金額';
+                btnEl.style.background = '#0284c7';
+            } else {
+                textEl.innerText = '狀態：進行中 (匯率即時更新)';
+                textEl.style.color = '#0369a1';
+                btnEl.innerText = '🔒 凍結旅程金額';
+                btnEl.style.background = 'var(--primary)';
+            }
+        }
+
+        function toggleTripFreeze() {
+            activeTripFrozen = !activeTripFrozen;
+            const trip = trips.find(t => t.id === activeTripId);
+            if (trip) {
+                trip.frozen = activeTripFrozen;
+                localStorage.setItem('trips_v1', JSON.stringify(trips));
+            }
+            updateTripFreezeUI();
+            renderTripExpenseList();
+        }
+
+        function saveExchangeRate() {
+            const curr = document.getElementById('ex-currency').value.trim().toUpperCase();
+            const rate = parseFloat(document.getElementById('ex-rate').value);
+
+            if (!curr || isNaN(rate) || rate <= 0) {
+                alert('請輸入有效的幣別及匯率！');
+                return;
+            }
+
+            activeExchangeRates[curr] = rate;
+            const trip = trips.find(t => t.id === activeTripId);
+            if (trip) {
+                trip.exchangeRates = activeExchangeRates;
+                localStorage.setItem('trips_v1', JSON.stringify(trips));
+            }
+
+            document.getElementById('ex-currency').value = '';
+            document.getElementById('ex-rate').value = '';
+            renderExchangeRateList();
+            renderTripExpenseList();
+        }
+
+        function deleteExchangeRate(curr) {
+            delete activeExchangeRates[curr];
+            const trip = trips.find(t => t.id === activeTripId);
+            if (trip) {
+                trip.exchangeRates = activeExchangeRates;
+                localStorage.setItem('trips_v1', JSON.stringify(trips));
+            }
+            renderExchangeRateList();
+            renderTripExpenseList();
+        }
+
+        function renderExchangeRateList() {
+            const listEl = document.getElementById('exchange-rate-list');
+            if (!listEl) return;
+            const keys = Object.keys(activeExchangeRates);
+            if (keys.length === 0) {
+                listEl.innerHTML = '<div style="font-size: 0.8rem; color: #9ca3af; text-align: center;">尚未設定匯率</div>';
+                return;
+            }
+            listEl.innerHTML = keys.map(k => `
+                <div class="bookmark-item" style="padding: 4px 8px; margin-bottom: 4px;">
+                    <span style="font-size: 0.8rem;">1 ${k} = <strong>${activeExchangeRates[k]}</strong> HKD</span>
+                    <button type="button" class="bookmark-del-btn" onclick="deleteExchangeRate('${k}')">刪除</button>
+                </div>
+            `).join('');
+        }
+
+        let missingExCurr = null;
+        let pendingExpenseData = null;
+
+        function openTripExpenseModal(editId = null) {
+            document.getElementById('te-edit-id').value = editId || '';
+            if (editId) {
+                const trip = trips.find(t => t.id === activeTripId);
+                if (trip) {
+                    const exp = trip.expenses.find(e => e.id === editId);
+                    if (exp) {
+                        document.getElementById('te-input-date').value = exp.date;
+                        document.getElementById('te-input-activity').value = exp.activity;
+                        document.getElementById('te-input-amount').value = exp.amount;
+                        document.getElementById('te-input-currency').value = exp.currency;
+                    }
+                }
+            } else {
+                document.getElementById('te-input-date').valueAsDate = new Date();
+                document.getElementById('te-input-activity').value = '';
+                document.getElementById('te-input-amount').value = '';
+                document.getElementById('te-input-currency').value = 'JPY';
+            }
+            populateTripBookmarkDropdown();
+            document.getElementById('trip-expense-modal').classList.add('active');
+        }
+
+        function closeTripExpenseModal() {
+            document.getElementById('trip-expense-modal').classList.remove('active');
+        }
+
+        function populateTripBookmarkDropdown() {
+            const selectEl = document.getElementById('te-select-bookmark');
+            if (!selectEl) return;
+            selectEl.innerHTML = '<option value="">-- 選擇常用活動類型 --</option>';
+            tripBookmarks.forEach(b => {
+                selectEl.innerHTML += `<option value="${b}">${b}</option>`;
+            });
+        }
+
+        function fillTripBookmark() {
+            const val = document.getElementById('te-select-bookmark').value;
+            if (val) {
+                document.getElementById('te-input-activity').value = val;
+            }
+        }
+
+        function openTripBookmarkManage() {
+            renderTripBookmarkList();
+            document.getElementById('trip-bookmark-modal').classList.add('active');
+        }
+
+        function closeTripBookmarkManage() {
+            document.getElementById('trip-bookmark-modal').classList.remove('active');
+            populateTripBookmarkDropdown();
+        }
+
+        function saveTripBookmarkType() {
+            const name = document.getElementById('tbm-input-name').value.trim();
+            if (!name) {
+                alert('請輸入類型名稱！');
+                return;
+            }
+            if (!tripBookmarks.includes(name)) {
+                tripBookmarks.push(name);
+                localStorage.setItem('trip_bookmarks_v1', JSON.stringify(tripBookmarks));
+            }
+            document.getElementById('tbm-input-name').value = '';
+            renderTripBookmarkList();
+        }
+
+        function deleteTripBookmarkType(name) {
+            tripBookmarks = tripBookmarks.filter(b => b !== name);
+            localStorage.setItem('trip_bookmarks_v1', JSON.stringify(tripBookmarks));
+            renderTripBookmarkList();
+        }
+
+        function renderTripBookmarkList() {
+            const listEl = document.getElementById('trip-bookmark-list');
+            if (!listEl) return;
+            if (tripBookmarks.length === 0) {
+                listEl.innerHTML = '<div style="color:#9ca3af; font-size:0.8rem; text-align:center;">無自定義類型</div>';
+                return;
+            }
+            listEl.innerHTML = tripBookmarks.map(b => `
+                <div class="bookmark-item">
+                    <span style="font-size: 0.82rem; font-weight:600;">${b}</span>
+                    <button type="button" class="bookmark-del-btn" onclick="deleteTripBookmarkType('${b}')">刪除</button>
+                </div>
+            `).join('');
+        }
+
+        function saveTripExpense() {
+            const editId = document.getElementById('te-edit-id').value;
+            const date = document.getElementById('te-input-date').value;
+            const activity = document.getElementById('te-input-activity').value.trim();
+            const amount = parseFloat(document.getElementById('te-input-amount').value);
+            const currency = document.getElementById('te-input-currency').value.trim().toUpperCase();
+
+            if (!date || !activity || isNaN(amount) || !currency) {
+                alert('請完整填寫日期、活動類型、金額與幣別！');
+                return;
+            }
+
+            // 檢查是否為 HKD，若不是則檢查是否有匯率
+            if (currency !== 'HKD' && !activeExchangeRates[currency]) {
+                missingExCurr = currency;
+                pendingExpenseData = { editId, date, activity, amount, currency };
+                document.getElementById('exchange-prompt-msg').innerText = `您輸入了外幣 ${currency}，但尚未為該幣別設定匯率。`;
+                document.getElementById('ex-prompt-label').innerText = `請輸入 1 ${currency} = 幾多 HKD：`;
+                document.getElementById('ex-prompt-value').value = '';
+                document.getElementById('exchange-prompt-modal').classList.add('active');
+                return;
+            }
+
+            executeSaveTripExpense(editId, date, activity, amount, currency);
+        }
+
+        function executeSaveTripExpense(editId, date, activity, amount, currency) {
+            const trip = trips.find(t => t.id === activeTripId);
+            if (!trip) return;
+
+            let rate = 1;
+            if (currency === 'HKD') {
+                rate = 1;
+            } else {
+                rate = activeExchangeRates[currency] || 1;
+            }
+            const hkdAmount = amount * rate;
+
+            if (editId) {
+                const exp = trip.expenses.find(e => e.id == editId);
+                if (exp) {
+                    exp.date = date;
+                    exp.activity = activity;
+                    exp.amount = amount;
+                    exp.currency = currency;
+                    exp.hkdAmount = hkdAmount;
+                }
+            } else {
+                const newExp = {
+                    id: Date.now(),
+                    date: date,
+                    activity: activity,
+                    amount: amount,
+                    currency: currency,
+                    hkdAmount: hkdAmount
+                };
+                trip.expenses.unshift(newExp);
+            }
+
+            localStorage.setItem('trips_v1', JSON.stringify(trips));
+            closeTripExpenseModal();
+            renderTripExpenseList();
+            renderTrips();
+            updateDashboardOverview();
+        }
+
+        function saveMissingExchangeRate() {
+            const val = parseFloat(document.getElementById('ex-prompt-value').value);
+            if (isNaN(val) || val <= 0) {
+                alert('請輸入有效的匯率數值！');
+                return;
+            }
+
+            activeExchangeRates[missingExCurr] = val;
+            const trip = trips.find(t => t.id === activeTripId);
+            if (trip) {
+                trip.exchangeRates = activeExchangeRates;
+                localStorage.setItem('trips_v1', JSON.stringify(trips));
+            }
+
+            document.getElementById('exchange-prompt-modal').classList.remove('active');
+            renderExchangeRateList();
+
+            if (pendingExpenseData) {
+                executeSaveTripExpense(
+                    pendingExpenseData.editId,
+                    pendingExpenseData.date,
+                    pendingExpenseData.activity,
+                    pendingExpenseData.amount,
+                    pendingExpenseData.currency
+                );
+                pendingExpenseData = null;
+            }
+        }
+
+        function closeExchangePromptModal() {
+            document.getElementById('exchange-prompt-modal').classList.remove('active');
+            pendingExpenseData = null;
+        }
+
+        function deleteTripExpense(expId) {
+            if (confirm('確定要刪除這筆旅程開支嗎？')) {
+                const trip = trips.find(t => t.id === activeTripId);
+                if (trip) {
+                    trip.expenses = trip.expenses.filter(e => e.id !== expId);
+                    localStorage.setItem('trips_v1', JSON.stringify(trips));
+                    renderTripExpenseList();
+                    renderTrips();
+                    updateDashboardOverview();
                 }
             }
         }
 
-        // Export / Import
-        function exportData() {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
+        function renderTripExpenseList() {
+            const listEl = document.getElementById('trip-expense-list');
+            if (!listEl) return;
+            const trip = trips.find(t => t.id === activeTripId);
+            if (!trip || !trip.expenses || trip.expenses.length === 0) {
+                listEl.innerHTML = '<div style="text-align:center; color:#9ca3af; padding:15px; font-size: 0.85rem;">暫無旅程開支記錄</div>';
+                return;
+            }
+
+            listEl.innerHTML = trip.expenses.map(e => `
+                <div class="record-card" style="padding: 10px 12px; margin-bottom: 6px;">
+                    <div class="record-info">
+                        <div style="font-size: 0.88rem;"><span class="badge badge-trip">${e.activity}</span></div>
+                        <div style="font-size: 0.75rem;">日期：${e.date}</div>
+                    </div>
+                    <div class="record-amount">
+                        <div class="record-cost" style="color: var(--trip-blue); font-size: 0.92rem;">${e.amount} ${e.currency}</div>
+                        <div style="font-size: 0.72rem; color: #6b7280;">(≈ $${e.hkdAmount.toFixed(1)} HKD)</div>
+                        <div style="margin-top: 2px;">
+                            <button class="btn-edit-item" onclick="openTripExpenseModal(${e.id})" style="padding: 2px 6px; font-size: 0.7rem;">編輯</button>
+                            <button class="bookmark-del-btn" onclick="deleteTripExpense(${e.id})" style="padding: 2px 6px; font-size: 0.7rem;">刪除</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderTrips() {
+            const container = document.getElementById('trip-list-container');
+            if (!container) return;
+
+            if (trips.length === 0) {
+                container.innerHTML = '<div style="text-align:center; color:#9ca3af; padding:20px;">暫無建立任何旅程</div>';
+                return;
+            }
+
+            container.innerHTML = trips.map(t => {
+                let totalHkd = 0;
+                if (t.expenses) {
+                    t.expenses.forEach(e => totalHkd += (e.hkdAmount || 0));
+                }
+                const badgeHtml = t.frozen 
+                    ? `<span class="trip-badge-frozen">已凍結</span>` 
+                    : `<span class="trip-badge-active">進行中</span>`;
+
+                return `
+                    <div class="trip-card" onclick="openTripDetail(${t.id})" style="cursor: pointer;">
+                        <div class="trip-card-header">
+                            <div class="trip-card-title">${t.title}</div>
+                            <div>${badgeHtml}</div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                            <div style="font-size: 0.85rem; color: #4b5563;">開支筆數：${t.expenses ? t.expenses.length : 0} 筆</div>
+                            <div style="font-size: 1.1rem; font-weight: 800; color: var(--trip-blue);">$${totalHkd.toFixed(1)} HKD</div>
+                        </div>
+                        <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px;" onclick="event.stopPropagation()">
+                            <button class="bookmark-del-btn" onclick="deleteTrip(${t.id})">刪除旅程</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+
+        // ==================== DEBT MODULE LOGIC ====================
+        let debtRecords = JSON.parse(localStorage.getItem('debt_records_v1') || '[]');
+
+        function switchDebtTab(tabName) {
+            document.querySelectorAll('.debt-tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.debt-section').forEach(s => s.classList.remove('active'));
+
+            if (tabName === 'payable') {
+                document.getElementById('tab-payable').classList.add('active');
+                document.getElementById('section-payable').classList.add('active');
+            } else {
+                document.getElementById('tab-receivable').classList.add('active');
+                document.getElementById('section-receivable').classList.add('active');
+            }
+        }
+
+        function openPayableModal() {
+            document.getElementById('payable-input-who').value = '';
+            document.getElementById('payable-input-money').value = '';
+            document.getElementById('payable-input-why').value = '';
+            document.getElementById('payable-modal').classList.add('active');
+        }
+        function closePayableModal() {
+            document.getElementById('payable-modal').classList.remove('active');
+        }
+
+        function savePayableRecord() {
+            const who = document.getElementById('payable-input-who').value.trim();
+            const money = parseFloat(document.getElementById('payable-input-money').value);
+            const why = document.getElementById('payable-input-why').value.trim();
+
+            if (!who || isNaN(money)) {
+                alert('請完整填寫對象與金額！');
+                return;
+            }
+
+            const newRec = {
+                id: Date.now(),
+                type: 'payable',
+                who: who,
+                money: money,
+                why: why || '未填寫原因',
+                repaid: false,
+                date: new Date().toISOString().split('T')[0]
+            };
+            debtRecords.unshift(newRec);
+            localStorage.setItem('debt_records_v1', JSON.stringify(debtRecords));
+            closePayableModal();
+            renderDebt();
+            updateDashboardOverview();
+        }
+
+        function openReceivableModal() {
+            document.getElementById('receivable-input-who').value = '';
+            document.getElementById('receivable-input-money').value = '';
+            document.getElementById('receivable-input-why').value = '';
+            document.getElementById('receivable-modal').classList.add('active');
+        }
+        function closeReceivableModal() {
+            document.getElementById('receivable-modal').classList.remove('active');
+        }
+
+        function saveReceivableRecord() {
+            const who = document.getElementById('receivable-input-who').value.trim();
+            const money = parseFloat(document.getElementById('receivable-input-money').value);
+            const why = document.getElementById('receivable-input-why').value.trim();
+
+            if (!who || isNaN(money)) {
+                alert('請完整填寫對象與金額！');
+                return;
+            }
+
+            const newRec = {
+                id: Date.now(),
+                type: 'receivable',
+                who: who,
+                money: money,
+                why: why || '未填寫原因',
+                repaid: false,
+                date: new Date().toISOString().split('T')[0]
+            };
+            debtRecords.unshift(newRec);
+            localStorage.setItem('debt_records_v1', JSON.stringify(debtRecords));
+            closeReceivableModal();
+            renderDebt();
+            updateDashboardOverview();
+        }
+
+        function toggleDebtRepaid(id) {
+            const rec = debtRecords.find(r => r.id === id);
+            if (rec) {
+                rec.repaid = !rec.repaid;
+                localStorage.setItem('debt_records_v1', JSON.stringify(debtRecords));
+                renderDebt();
+                updateDashboardOverview();
+            }
+        }
+
+        function deleteDebtRecord(id) {
+            if (confirm('確定要刪除這筆債務記錄嗎？')) {
+                debtRecords = debtRecords.filter(r => r.id !== id);
+                localStorage.setItem('debt_records_v1', JSON.stringify(debtRecords));
+                renderDebt();
+                updateDashboardOverview();
+            }
+        }
+
+        function renderDebt() {
+            const payableList = document.getElementById('payable-records-list');
+            const receivableList = document.getElementById('receivable-records-list');
+            if (!payableList || !receivableList) return;
+
+            const payables = debtRecords.filter(r => r.type === 'payable');
+            const receivables = debtRecords.filter(r => r.type === 'receivable');
+
+            if (payables.length === 0) {
+                payableList.innerHTML = '<div style="text-align:center; color:#9ca3af; padding:15px;">暫無應付款記錄</div>';
+            } else {
+                payableList.innerHTML = payables.map(r => `
+                    <div class="record-card" style="${r.repaid ? 'opacity: 0.5;' : ''}">
+                        <div class="record-info">
+                            <div><span class="badge badge-kmb">${r.who}</span> ${r.why}</div>
+                            <div>日期：${r.date} ${r.repaid ? '<strong>(已還清)</strong>' : ''}</div>
+                        </div>
+                        <div class="record-amount">
+                            <div class="record-cost" style="color: var(--danger);">$${r.money.toFixed(1)}</div>
+                            <button class="btn-repaid" onclick="toggleDebtRepaid(${r.id})">${r.repaid ? '標記未還' : '標記已還'}</button>
+                            <button class="bookmark-del-btn" onclick="deleteDebtRecord(${r.id})" style="margin-left:4px;">刪除</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            if (receivables.length === 0) {
+                receivableList.innerHTML = '<div style="text-align:center; color:#9ca3af; padding:15px;">暫無應收款記錄</div>';
+            } else {
+                receivableList.innerHTML = receivables.map(r => `
+                    <div class="record-card" style="${r.repaid ? 'opacity: 0.5;' : ''}">
+                        <div class="record-info">
+                            <div><span class="badge badge-success">${r.who}</span> ${r.why}</div>
+                            <div>日期：${r.date} ${r.repaid ? '<strong>(已收回)</strong>' : ''}</div>
+                        </div>
+                        <div class="record-amount">
+                            <div class="record-cost" style="color: var(--success);">$${r.money.toFixed(1)}</div>
+                            <button class="btn-repaid" onclick="toggleDebtRepaid(${r.id})">${r.repaid ? '標記未收' : '標記已收'}</button>
+                            <button class="bookmark-del-btn" onclick="deleteDebtRecord(${r.id})" style="margin-left:4px;">刪除</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+
+        // ==================== EXPORT & IMPORT DATA LOGIC ====================
+        function exportDataFile() {
+            const exportObj = {
+                transitCycles: JSON.parse(localStorage.getItem('kmb_cycles_v1') || '[]'),
+                transitBookmarks: JSON.parse(localStorage.getItem('kmb_bookmarks_v1') || '[]'),
+                foodCycles: JSON.parse(localStorage.getItem('food_cycles_v1') || '[]'),
+                sportRecords: sportRecords,
+                loveRecords: loveRecords,
+                loveCategories: loveCategories,
+                trips: trips,
+                tripBookmarks: tripBookmarks,
+                debtRecords: debtRecords
+            };
+
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj, null, 2));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `maladouka_backup_${currentYear}_${currentMonth}.json`);
+            const now = new Date();
+            const dateStr = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+            downloadAnchor.setAttribute("download", `Maladoukæ_Backup_${dateStr}.txt`);
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();
         }
 
-        function importDataTrigger() {
+        function triggerImportFile() {
             document.getElementById('import-file-input').click();
         }
 
         function importDataFile(event) {
             const file = event.target.files[0];
-            if(!file) return;
+            if (!file) return;
+
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
-                    const parsed = JSON.parse(e.target.result);
-                    if(parsed && parsed.food && parsed.kmb) {
-                        db = parsed;
-                        saveToLocalStorage();
-                        updateAllViews();
-                        alert('資料成功匯入！');
-                    } else {
-                        alert('檔案格式不正確');
+                    const imported = JSON.parse(e.target.result);
+                    if (confirm('匯入備份將會覆蓋當前所有數據，確定要繼續嗎？')) {
+                        if (imported.transitCycles) localStorage.setItem('kmb_cycles_v1', JSON.stringify(imported.transitCycles));
+                        if (imported.transitBookmarks) localStorage.setItem('kmb_bookmarks_v1', JSON.stringify(imported.transitBookmarks));
+                        if (imported.foodCycles) localStorage.setItem('food_cycles_v1', JSON.stringify(imported.foodCycles));
+                        if (imported.sportRecords) {
+                            sportRecords = imported.sportRecords;
+                            localStorage.setItem('sport_records_v1', JSON.stringify(sportRecords));
+                        }
+                        if (imported.loveRecords) {
+                            loveRecords = imported.loveRecords;
+                            localStorage.setItem('love_records_v1', JSON.stringify(loveRecords));
+                        }
+                        if (imported.loveCategories) {
+                            loveCategories = imported.loveCategories;
+                            localStorage.setItem('love_categories_v1', JSON.stringify(loveCategories));
+                        }
+                        if (imported.trips) {
+                            trips = imported.trips;
+                            localStorage.setItem('trips_v1', JSON.stringify(trips));
+                        }
+                        if (imported.tripBookmarks) {
+                            tripBookmarks = imported.tripBookmarks;
+                            localStorage.setItem('trip_bookmarks_v1', JSON.stringify(tripBookmarks));
+                        }
+                        if (imported.debtRecords) {
+                            debtRecords = imported.debtRecords;
+                            localStorage.setItem('debt_records_v1', JSON.stringify(debtRecords));
+                        }
+
+                        alert('資料匯入成功！頁面即將重新整理。');
+                        location.reload();
                     }
-                } catch(err) {
-                    alert('解析 JSON 失敗：' + err.message);
+                } catch (err) {
+                    alert('檔案格式錯誤或解析失敗，無法匯入！');
+                    console.error(err);
                 }
             };
             reader.readAsText(file);
+            event.target.value = '';
         }
 
-        // Month selector initialization
-        function initMonthSelector() {
-            const container = document.getElementById('month-buttons-container');
-            container.innerHTML = '';
-            for(let m = 1; m <= 12; m++) {
-                const btn = document.createElement('button');
-                btn.className = `month-btn ${m === currentMonth ? 'active' : ''}`;
-                btn.innerText = `${m}月`;
-                btn.onclick = () => {
-                    currentMonth = m;
-                    calYear = currentYear;
-                    calMonth = currentMonth;
-                    initMonthSelector();
-                    updateAllViews();
+
+        // ==================== DASHBOARD OVERVIEW SUMMARY ====================
+        function updateDashboardOverview() {
+            // 1. Transit Summary
+            let kmbCycles = JSON.parse(localStorage.getItem('kmb_cycles_v1') || '[]');
+            if (kmbCycles.length === 0) {
+                kmbCycles = [{ id: 1, startDate: new Date().toISOString().split('T')[0], records: [] }];
+            }
+            const currentKmbCycle = kmbCycles[0];
+            let kmbFilteredSaved = 0;
+            let kmbCount = 0;
+            if (currentKmbCycle && currentKmbCycle.records) {
+                currentKmbCycle.records.forEach(r => {
+                    if (matchSelectedDate(r.date)) {
+                        kmbCount++;
+                        if (r.type === 'A') kmbFilteredSaved += r.price;
+                        else if (r.type === 'B') kmbFilteredSaved += (r.price * 0.73);
+                        else if (r.type === 'R') kmbFilteredSaved += r.price;
+                    }
+                });
+            }
+            const btnTransit = document.getElementById('dash-btn-transit');
+            if (btnTransit) btnTransit.innerText = `$${kmbFilteredSaved.toFixed(0)}`;
+
+            // 2. Food Summary
+            let foodCycles = JSON.parse(localStorage.getItem('food_cycles_v1') || '[]');
+            if (foodCycles.length === 0) {
+                foodCycles = [{ id: 1, records: [] }];
+            }
+            const currentFoodCycle = foodCycles[0];
+            let foodFilteredCount = 0;
+            let foodFilteredCost = 0;
+            if (currentFoodCycle && currentFoodCycle.records) {
+                currentFoodCycle.records.forEach(r => {
+                    if (matchSelectedDate(r.date)) {
+                        foodFilteredCount++;
+                        foodFilteredCost += r.cost;
+                    }
+                });
+            }
+            const btnFood = document.getElementById('dash-btn-food');
+            if (btnFood) btnFood.innerText = `$${foodFilteredCost.toFixed(0)} (${foodFilteredCount}筆)`;
+
+            // 3. Sport Summary
+            let sportFilteredCost = 0;
+            let sportFilteredCount = 0;
+            sportRecords.forEach(r => {
+                if (matchSelectedDate(r.date)) {
+                    sportFilteredCount++;
+                    sportFilteredCost += r.cost;
+                }
+            });
+            const btnSport = document.getElementById('dash-btn-sport');
+            if (btnSport) btnSport.innerText = `$${sportFilteredCost.toFixed(0)} (${sportFilteredCount}次)`;
+
+            // 4. Love Summary
+            let loveFilteredTotal = 0;
+            let loveFilteredCount = 0;
+            loveRecords.forEach(r => {
+                if (matchSelectedDate(r.date)) {
+                    loveFilteredCount++;
+                    loveFilteredTotal += r.money;
+                }
+            });
+            const btnLove = document.getElementById('dash-btn-love');
+            if (btnLove) btnLove.innerText = `$${loveFilteredTotal.toFixed(0)} (${loveFilteredCount}筆)`;
+
+            // 5. Trip Summary
+            let tripFilteredTotal = 0;
+            trips.forEach(t => {
+                if (t.expenses) {
+                    t.expenses.forEach(e => {
+                        if (matchSelectedDate(e.date)) {
+                            tripFilteredTotal += (e.hkdAmount || 0);
+                        }
+                    });
+                }
+            });
+            const btnTrip = document.getElementById('dash-btn-trip');
+            if (btnTrip) btnTrip.innerText = `$${tripFilteredTotal.toFixed(0)}`;
+
+            // 6. Debt Summary (Payable vs Receivable un-repaid)
+            let debtNetTotal = 0;
+            debtRecords.forEach(d => {
+                if (!d.repaid && matchSelectedDate(d.date)) {
+                    if (d.type === 'payable') debtNetTotal -= d.money;
+                    else if (d.type === 'receivable') debtNetTotal += d.money;
+                }
+            });
+            const btnDebt = document.getElementById('dash-btn-debt');
+            if (btnDebt) {
+                btnDebt.innerText = `$${debtNetTotal.toFixed(0)}`;
+                btnDebt.style.color = debtNetTotal >= 0 ? 'var(--success)' : 'var(--danger)';
+            }
+
+            // Total Dashboard Expense Calculation
+            // Total Expense = Food Cost + Sport Cost + Love Cost + Trip Expense + Payable Debt (active) - KMB Net Cost or similar? Let's sum direct expenses: Food Cost + Sport Cost + Love Cost + Trip Expense
+            const totalExpenseVal = foodFilteredCost + sportFilteredCost + loveFilteredTotal + tripFilteredTotal;
+            const homeTotalEl = document.getElementById('home-total-expense');
+            if (homeTotalEl) {
+                homeTotalEl.innerText = `$${totalExpenseVal.toFixed(1)}`;
+            }
+        }
+
+
+        // ==================== TRANSIT MODULE JAVASCRIPT ====================
+        let kmbCycles = JSON.parse(localStorage.getItem('kmb_cycles_v1') || '[]');
+        let kmbBookmarks = JSON.parse(localStorage.getItem('kmb_bookmarks_v1') || '[]');
+
+        if (kmbCycles.length === 0) {
+            kmbCycles = [{
+                id: 1,
+                startDate: new Date().toISOString().split('T')[0],
+                records: []
+            }];
+            localStorage.setItem('kmb_cycles_v1', JSON.stringify(kmbCycles));
+        }
+
+        function renderTransit() {
+            const currentCycle = kmbCycles[0];
+            document.getElementById('transit-cycle-id').innerText = `月票期數 #${currentCycle.id} (始於 ${currentCycle.startDate})`;
+
+            let totalSaved = 0;
+            currentCycle.records.forEach(r => {
+                if (r.type === 'A') {
+                    totalSaved += r.price;
+                } else if (r.type === 'B') {
+                    totalSaved += (r.price * 0.73);
+                } else if (r.type === 'R') {
+                    totalSaved += r.price;
+                }
+            });
+
+            const netStatusEl = document.getElementById('kmb-net-status');
+            const totalSavedEl = document.getElementById('kmb-total-saved');
+            totalSavedEl.innerText = `$${totalSaved.toFixed(1)}`;
+
+            const netDiff = totalSaved - 834;
+            if (netDiff >= 0) {
+                netStatusEl.innerText = `已回本！淨賺 $${netDiff.toFixed(1)}`;
+                netStatusEl.className = 'kpi-value';
+                netStatusEl.style.color = 'var(--success)';
+            } else {
+                netStatusEl.innerText = `尚未回本 (差 $${Math.abs(netDiff).toFixed(1)})`;
+                netStatusEl.className = 'kpi-value red';
+            }
+
+            const listContainer = document.getElementById('transit-records-list');
+            if (currentCycle.records.length === 0) {
+                listContainer.innerHTML = '<div style="text-align:center; color:#9ca3af; padding:20px;">本期尚無乘車紀錄</div>';
+            } else {
+                listContainer.innerHTML = currentCycle.records.map(r => {
+                    let badgeClass = 'badge-other';
+                    let badgeText = '其他';
+                    let payText = '';
+                    let savedVal = 0;
+
+                    if (r.type === 'A') {
+                        badgeClass = 'badge-kmb';
+                        badgeText = '九巴';
+                        payText = '實付 $0.0 (月票免費)';
+                        savedVal = r.price;
+                    } else if (r.type === 'B') {
+                        badgeClass = 'badge-airport';
+                        badgeText = '機場線';
+                        const pay = r.price * 0.27;
+                        payText = `實付 $${pay.toFixed(1)} (27折)`;
+                        savedVal = r.price * 0.73;
+                    } else if (r.type === 'C') {
+                        badgeClass = 'badge-other';
+                        badgeText = '無優惠';
+                        payText = `實付 $${r.price.toFixed(1)}`;
+                        savedVal = 0;
+                    } else if (r.type === 'R') {
+                        badgeClass = 'badge-reimburse';
+                        badgeText = '政府補貼';
+                        payText = `補貼回贈 +$${r.price.toFixed(1)}`;
+                        savedVal = r.price;
+                    }
+
+                    return `
+                        <div class="record-card">
+                            <div class="record-info">
+                                <div><span class="badge ${badgeClass}">${badgeText}</span> ${r.name}</div>
+                                <div>日期：${r.date} | 原價 $${r.price.toFixed(1)}</div>
+                            </div>
+                            <div class="record-amount">
+                                <div class="record-cost" style="color: var(--success);">+ $${savedVal.toFixed(1)}</div>
+                                <div style="font-size: 0.75rem; color: #6b7280;">${payText}</div>
+                                <div style="margin-top: 4px;">
+                                    <button class="btn-edit-item" onclick="openEditTransitModal(${r.id})">編輯</button>
+                                    <button class="bookmark-del-btn" onclick="deleteTransitRecord(${r.id})" style="margin-top:2px;">刪除</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        function openTransitModal() {
+            document.getElementById('transit-input-date').valueAsDate = new Date();
+            document.getElementById('transit-input-name').value = '';
+            document.getElementById('transit-input-price').value = '';
+            document.getElementById('transit-manual-type').value = 'A';
+            document.getElementById('transit-select-bookmark').value = '';
+            
+            populateTransitCycleJumpOptions('transit-cycle-jump');
+            populateBookmarkDropdown();
+            calculateTransitSavingsPreview();
+            document.getElementById('transit-modal').classList.add('active');
+        }
+
+        function closeTransitModal() {
+            document.getElementById('transit-modal').classList.remove('active');
+        }
+
+        function populateTransitCycleJumpOptions(selectId) {
+            const selectEl = document.getElementById(selectId);
+            if (!selectEl) return;
+            selectEl.innerHTML = kmbCycles.map((c, idx) => `
+                <option value="${c.id}">期數 #${c.id} (${c.startDate}${idx === 0 ? ' - 當前' : ''})</option>
+            `).join('');
+            selectEl.value = kmbCycles[0].id;
+        }
+
+        function onTransitCycleJumpChange() {
+            // 可用於切換目標期數記錄，此處預設記在當前期數
+        }
+
+        function populateBookmarkDropdown() {
+            const selectEl = document.getElementById('transit-select-bookmark');
+            if (!selectEl) return;
+            selectEl.innerHTML = '<option value="">-- 手動輸入全新路線 / 津貼 --</option>';
+            kmbBookmarks.forEach((bm, idx) => {
+                selectEl.innerHTML += `<option value="${idx}">${bm.name} ($${bm.price})</option>`;
+            });
+        }
+
+        function fillFromBookmark() {
+            const idx = document.getElementById('transit-select-bookmark').value;
+            if (idx === '') return;
+            const bm = kmbBookmarks[idx];
+            if (bm) {
+                document.getElementById('transit-input-name').value = bm.name;
+                document.getElementById('transit-manual-type').value = bm.type;
+                document.getElementById('transit-input-price').value = bm.price;
+                calculateTransitSavingsPreview();
+            }
+        }
+
+        function calculateTransitSavingsPreview() {
+            const type = document.getElementById('transit-manual-type').value;
+            const price = parseFloat(document.getElementById('transit-input-price').value) || 0;
+
+            let pay = 0;
+            let saved = 0;
+
+            if (type === 'A') {
+                pay = 0;
+                saved = price;
+            } else if (type === 'B') {
+                pay = price * 0.27;
+                saved = price * 0.73;
+            } else if (type === 'C') {
+                pay = price;
+                saved = 0;
+            } else if (type === 'R') {
+                pay = -price;
+                saved = price;
+            }
+
+            document.getElementById('preview-raw').innerText = `$${price.toFixed(1)}`;
+            document.getElementById('preview-pay').innerText = type === 'R' ? `-$${price.toFixed(1)} (回贈)` : `$${pay.toFixed(1)}`;
+            document.getElementById('preview-saved').innerText = `$${saved.toFixed(1)}`;
+        }
+
+        function saveTransitRecord() {
+            const targetCycleId = parseInt(document.getElementById('transit-cycle-jump').value) || kmbCycles[0].id;
+            const date = document.getElementById('transit-input-date').value;
+            const type = document.getElementById('transit-manual-type').value;
+            const name = document.getElementById('transit-input-name').value.trim();
+            const price = parseFloat(document.getElementById('transit-input-price').value);
+
+            if (!date || !name || isNaN(price)) {
+                alert('請完整填寫日期、路線名稱與金額！');
+                return;
+            }
+
+            const targetCycle = kmbCycles.find(c => c.id === targetCycleId);
+            if (!targetCycle) return;
+
+            const newRecord = {
+                id: Date.now(),
+                date: date,
+                type: type,
+                name: name,
+                price: price
+            };
+
+            targetCycle.records.unshift(newRecord);
+            localStorage.setItem('kmb_cycles_v1', JSON.stringify(kmbCycles));
+            closeTransitModal();
+            renderTransit();
+            updateDashboardOverview();
+        }
+
+        function deleteLastTransitStep() {
+            const currentCycle = kmbCycles[0];
+            if (currentCycle.records.length === 0) {
+                alert('本期沒有記錄可刪除！');
+                return;
+            }
+            if (confirm('確定要刪除本期上一筆搭車記錄嗎？')) {
+                currentCycle.records.shift();
+                localStorage.setItem('kmb_cycles_v1', JSON.stringify(kmbCycles));
+                renderTransit();
+                updateDashboardOverview();
+            }
+        }
+
+        function deleteTransitRecord(id) {
+            if (confirm('確定要刪除這筆記錄嗎？')) {
+                const currentCycle = kmbCycles[0];
+                currentCycle.records = currentCycle.records.filter(r => r.id !== id);
+                localStorage.setItem('kmb_cycles_v1', JSON.stringify(kmbCycles));
+                renderTransit();
+                updateDashboardOverview();
+            }
+        }
+
+        function openEditTransitModal(id) {
+            const currentCycle = kmbCycles[0];
+            const rec = currentCycle.records.find(r => r.id === id);
+            if (!rec) return;
+
+            document.getElementById('edit-transit-id').value = rec.id;
+            document.getElementById('edit-transit-date').value = rec.date;
+            document.getElementById('edit-transit-type').value = rec.type;
+            document.getElementById('edit-transit-name').value = rec.name;
+            document.getElementById('edit-transit-price').value = rec.price;
+            document.getElementById('edit-transit-modal').classList.add('active');
+        }
+
+        function closeEditTransitModal() {
+            document.getElementById('edit-transit-modal').classList.remove('active');
+        }
+
+        function updateTransitRecord() {
+            const id = parseInt(document.getElementById('edit-transit-id').value);
+            const date = document.getElementById('edit-transit-date').value;
+            const type = document.getElementById('edit-transit-type').value;
+            const name = document.getElementById('edit-transit-name').value.trim();
+            const price = parseFloat(document.getElementById('edit-transit-price').value);
+
+            if (!date || !name || isNaN(price)) {
+                alert('請完整填寫各項欄位！');
+                return;
+            }
+
+            const currentCycle = kmbCycles[0];
+            const rec = currentCycle.records.find(r => r.id === id);
+            if (rec) {
+                rec.date = date;
+                rec.type = type;
+                rec.name = name;
+                rec.price = price;
+                localStorage.setItem('kmb_cycles_v1', JSON.stringify(kmbCycles));
+            }
+
+            closeEditTransitModal();
+            renderTransit();
+            updateDashboardOverview();
+        }
+
+        function confirmResetTransitCycle() {
+            if (confirm('確定要開啟新一期九巴月票週期嗎？當前週期將會封存至歷史紀錄。')) {
+                const newId = kmbCycles.length + 1;
+                const newCycle = {
+                    id: newId,
+                    startDate: new Date().toISOString().split('T')[0],
+                    records: []
                 };
-                container.appendChild(btn);
+                kmbCycles.unshift(newCycle);
+                localStorage.setItem('kmb_cycles_v1', JSON.stringify(kmbCycles));
+                renderTransit();
+                updateDashboardOverview();
             }
-            document.getElementById('selected-year-label').innerText = `${currentYear}年 總覽 (已選 ${currentMonth}月)`;
         }
 
-        // View Management
-        function switchView(viewId) {
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.getElementById(viewId).classList.add('active');
-            if(viewId !== 'home-view') {
-                calYear = currentYear;
-                calMonth = currentMonth;
-                updateSubViews(viewId.replace('-view', ''));
-            }
-            updateAllViews();
-            window.scrollTo(0, 0);
-        }
-
-        function switchSubView(module, subType) {
-            const listEl = document.getElementById(`${module}-sub-list`);
-            const calEl = document.getElementById(`${module}-sub-calendar`);
-            if(!listEl || !calEl) return;
-            
-            if(subType === 'list') {
-                listEl.classList.remove('hidden');
-                calEl.classList.add('hidden');
+        function openTransitHistoryModal() {
+            const historyListEl = document.getElementById('transit-history-list');
+            if (kmbCycles.length <= 1) {
+                historyListEl.innerHTML = '<div style="text-align:center; color:#9ca3af; padding:20px;">暫無歷屆月票封存紀錄</div>';
             } else {
-                listEl.classList.add('hidden');
-                calEl.classList.remove('hidden');
-                activeCalModule = module;
-                renderCalendar(module);
-            }
-        }
-
-        function updateSubViews(module) {
-            if(['food', 'kmb', 'sport', 'love'].includes(module)) {
-                switchSubView(module, 'list');
-            }
-        }
-
-        // Filter helper by current Year & Month
-        function filterByCurrentMonth(arr) {
-            return arr.filter(item => {
-                if(!item.date) return false;
-                const parts = item.date.split('-');
-                if(parts.length < 2) return false;
-                const y = parseInt(parts[0]);
-                const m = parseInt(parts[1]);
-                return y === currentYear && m === currentMonth;
-            });
-        }
-
-        // Core Update / Render All Views
-        function updateAllViews() {
-            // 1. Food computations
-            const foodMonthArr = filterByCurrentMonth(db.food);
-            const foodSpent = foodMonthArr.reduce((acc, cur) => acc + (parseFloat(cur.spent) || 0), 0);
-            const foodSaved = foodMonthArr.reduce((acc, cur) => acc + (parseFloat(cur.saved) || 0), 0);
-            
-            document.getElementById('food-total-spent').innerText = `$${foodSpent.toFixed(2)}`;
-            document.getElementById('food-total-saved').innerText = `$${foodSaved.toFixed(2)}`;
-            document.getElementById('dash-food-kpi').innerText = `$${foodSaved.toFixed(0)}`;
-            renderFoodList(foodMonthArr);
-
-            // 2. Kmb computations
-            const kmbMonthArr = filterByCurrentMonth(db.kmb);
-            const kmbRides = kmbMonthArr.length;
-            const passCost = 680; // Standard monthly pass cost approx
-            const kmbSaved = kmbMonthArr.reduce((acc, cur) => acc + (parseFloat(cur.fare) || 0), 0) - (kmbRides > 0 ? 0 : 0);
-            const kmbNet = kmbMonthArr.reduce((acc, cur) => acc + (parseFloat(cur.fare) || 0), 0);
-
-            document.getElementById('kmb-total-rides').innerText = `${kmbRides} 程`;
-            document.getElementById('kmb-net-saving').innerText = `$${kmbNet.toFixed(2)}`;
-            document.getElementById('dash-kmb-kpi').innerText = `${kmbRides}程 / $${kmbNet.toFixed(0)}`;
-            renderKmbList(kmbMonthArr);
-
-            // 3. Sport computations
-            const sportMonthArr = filterByCurrentMonth(db.sport);
-            const sportDist = sportMonthArr.reduce((acc, cur) => acc + (parseFloat(cur.dist) || 0), 0);
-            const sportCal = sportMonthArr.reduce((acc, cur) => acc + (parseFloat(cur.cal) || 0), 0);
-
-            document.getElementById('sport-total-dist').innerText = `${sportDist.toFixed(1)} km`;
-            document.getElementById('sport-total-cal').innerText = `${sportCal.toFixed(0)} kcal`;
-            document.getElementById('dash-sport-kpi').innerText = `${sportDist.toFixed(1)} km`;
-            renderSportList(sportMonthArr);
-
-            // 4. Love computations
-            const loveMonthArr = filterByCurrentMonth(db.love);
-            const loveSpent = loveMonthArr.reduce((acc, cur) => acc + (parseFloat(cur.spent) || 0), 0);
-            const loveCount = loveMonthArr.length;
-
-            document.getElementById('love-total-spent').innerText = `$${loveSpent.toFixed(2)}`;
-            document.getElementById('love-total-count').innerText = `${loveCount} 次`;
-            document.getElementById('dash-love-kpi').innerText = `$${loveSpent.toFixed(0)}`;
-            renderLoveList(loveMonthArr);
-
-            // 5. Trip computations (All time or cumulative)
-            const tripTotal = db.trip.reduce((acc, cur) => acc + (parseFloat(cur.amount) || 0), 0);
-            const tripPct = db.tripGoal > 0 ? Math.min(100, Math.round((tripTotal / db.tripGoal) * 100)) : 0;
-
-            document.getElementById('trip-total-saved').innerText = `$${tripTotal.toFixed(2)}`;
-            document.getElementById('trip-progress-pct').innerText = `${tripPct}%`;
-            document.getElementById('dash-trip-kpi').innerText = `$${tripTotal.toFixed(0)}`;
-            renderTripList();
-
-            // 6. Debt computations
-            const totalRemaining = db.debt.reduce((acc, cur) => acc + (parseFloat(cur.remainingAmount) || 0), 0);
-            const totalPaid = db.debtRecords.filter(r => r.type === 'pay').reduce((acc, cur) => acc + (parseFloat(cur.amount) || 0), 0);
-
-            document.getElementById('debt-total-remaining').innerText = `$${totalRemaining.toFixed(2)}`;
-            document.getElementById('debt-total-paid').innerText = `$${totalPaid.toFixed(2)}`;
-            document.getElementById('dash-debt-kpi').innerText = `$${totalRemaining.toFixed(0)}`;
-            renderDebtSummary();
-            renderDebtRecords();
-
-            // Net Total Dashboard KPI (Food saved + KMB net + Sport/Love/Trip net considerations if needed, or overall balance)
-            // Net Total = Trip Total Saved + Food Saved + KMB Net - Food Spent - Love Spent - Debt Remaining etc. Let's make it intuitive:
-            const netTotal = tripTotal + foodSaved + kmbNet - loveSpent - totalRemaining;
-            const netEl = document.getElementById('dash-net-total');
-            netEl.innerText = `$${netTotal.toFixed(2)}`;
-            netEl.style.color = netTotal >= 0 ? '#ffffff' : '#fca5a5';
-
-            saveToLocalStorage();
-        }
-
-        // --- MODAL CONTROLS ---
-        function openFoodModal() { document.getElementById('modal-food').style.display = 'flex'; }
-        function openKmbModal() { document.getElementById('modal-kmb').style.display = 'flex'; }
-        let currentSportType = '跑步';
-        function setSportType(t) {
-            currentSportType = t;
-            document.getElementById('sport-type-run').className = `type-btn ${t === '跑步' ? 'active' : ''}`;
-            document.getElementById('sport-type-walk').className = `type-btn ${t === '散步' ? 'active' : ''}`;
-        }
-        function openSportModal() { document.getElementById('modal-sport').style.display = 'flex'; }
-        function openLoveModal() { document.getElementById('modal-love').style.display = 'flex'; }
-        function openTripModal() { document.getElementById('modal-trip').style.display = 'flex'; }
-        
-        let currentDebtOp = 'new';
-        function setDebtOp(op) {
-            currentDebtOp = op;
-            document.getElementById('debt-op-add').className = `type-btn ${op === 'new' ? 'active' : ''}`;
-            document.getElementById('debt-op-pay').className = `type-btn ${op === 'pay' ? 'active' : ''}`;
-            if(op === 'new') {
-                document.getElementById('debt-name-group').style.display = 'block';
-                document.getElementById('debt-select-group').style.display = 'none';
-            } else {
-                document.getElementById('debt-name-group').style.display = 'none';
-                document.getElementById('debt-select-group').style.display = 'block';
-                populateDebtSelect();
-            }
-        }
-        function openDebtModal() { 
-            setDebtOp('new');
-            document.getElementById('modal-debt').style.display = 'flex'; 
-        }
-
-        function closeModal(name) {
-            document.getElementById(`modal-${name}`).style.display = 'none';
-        }
-
-        // --- SAVE ACTIONS & LOGIC ---
-        function saveFood() {
-            const date = document.getElementById('food-date').value;
-            const name = document.getElementById('food-name').value || '日常一餐';
-            const spent = parseFloat(document.getElementById('food-spent').value) || 0;
-            
-            // 修改後：不分選項，每一餐 budget 劃一為 100
-            const budget = 100;
-            const saved = budget - spent;
-
-            db.food.unshift({ id: Date.now(), date, name, spent, saved, type: 'standard' });
-            closeModal('food');
-            updateAllViews();
-            document.getElementById('food-name').value = '';
-            document.getElementById('food-spent').value = '';
-        }
-
-        function undoFood() {
-            if(db.food.length > 0) {
-                db.food.shift();
-                updateAllViews();
-            } else {
-                alert('沒有可復原的紀錄');
-            }
-        }
-
-        function saveKmb() {
-            const date = document.getElementById('kmb-date').value;
-            const route = document.getElementById('kmb-route').value || '九巴行程';
-            const fare = parseFloat(document.getElementById('kmb-fare').value) || 15.0;
-
-            db.kmb.unshift({ id: Date.now(), date, route, fare });
-            closeModal('kmb');
-            updateAllViews();
-            document.getElementById('kmb-route').value = '';
-        }
-
-        function undoKmb() {
-            if(db.kmb.length > 0) {
-                db.kmb.shift();
-                updateAllViews();
-            } else {
-                alert('沒有可復原的紀錄');
-            }
-        }
-
-        function saveSport() {
-            const date = document.getElementById('sport-date').value;
-            const dist = parseFloat(document.getElementById('sport-dist').value) || 0;
-            let cal = parseFloat(document.getElementById('sport-cal').value);
-            if(isNaN(cal)) {
-                // Auto estimate: Run ~65 kcal/km, Walk ~45 kcal/km
-                cal = dist * (currentSportType === '跑步' ? 65 : 45);
-            }
-
-            db.sport.unshift({ id: Date.now(), date, type: currentSportType, dist, cal });
-            closeModal('sport');
-            updateAllViews();
-            document.getElementById('sport-dist').value = '';
-            document.getElementById('sport-cal').value = '';
-        }
-
-        function undoSport() {
-            if(db.sport.length > 0) {
-                db.sport.shift();
-                updateAllViews();
-            } else {
-                alert('沒有可復原的紀錄');
-            }
-        }
-
-        function saveLove() {
-            const date = document.getElementById('love-date').value;
-            const name = document.getElementById('love-name').value || '拍拖活動';
-            const spent = parseFloat(document.getElementById('love-spent').value) || 0;
-
-            db.love.unshift({ id: Date.now(), date, name, spent });
-            closeModal('love');
-            updateAllViews();
-            document.getElementById('love-name').value = '';
-            document.getElementById('love-spent').value = '';
-        }
-
-        function undoLove() {
-            if(db.love.length > 0) {
-                db.love.shift();
-                updateAllViews();
-            } else {
-                alert('沒有可復原的紀錄');
-            }
-        }
-
-        function saveTrip() {
-            const date = document.getElementById('trip-date').value;
-            const name = document.getElementById('trip-name').value || '旅遊儲蓄';
-            const amount = parseFloat(document.getElementById('trip-amount').value) || 0;
-
-            db.trip.unshift({ id: Date.now(), date, name, amount });
-            closeModal('trip');
-            updateAllViews();
-            document.getElementById('trip-name').value = '';
-            document.getElementById('trip-amount').value = '';
-        }
-
-        function undoTrip() {
-            if(db.trip.length > 0) {
-                db.trip.shift();
-                updateAllViews();
-            } else {
-                alert('沒有可復原的紀錄');
-            }
-        }
-
-        function resetTripGoal() {
-            const newGoal = prompt('請輸入新的旅遊儲蓄目標金額 (HKD)：', db.tripGoal);
-            if(newGoal !== null && !isNaN(newGoal)) {
-                db.tripGoal = parseFloat(newGoal);
-                updateAllViews();
-            }
-        }
-
-        // --- DEBT MANAGEMENT LOGIC ---
-        function switchDebtTab(tab) {
-            const btns = document.querySelectorAll('.debt-tab-btn');
-            btns[0].className = `debt-tab-btn ${tab === 'summary' ? 'active' : ''}`;
-            btns[1].className = `debt-tab-btn ${tab === 'records' ? 'active' : ''}`;
-            
-            document.getElementById('debt-section-summary').className = `debt-section ${tab === 'summary' ? 'active' : ''}`;
-            document.getElementById('debt-section-records').className = `debt-section ${tab === 'records' ? 'active' : ''}`;
-        }
-
-        function populateDebtSelect() {
-            const select = document.getElementById('debt-select-id');
-            select.innerHTML = '';
-            db.debt.forEach(d => {
-                if(d.remainingAmount > 0) {
-                    const opt = document.createElement('option');
-                    opt.value = d.id;
-                    opt.innerText = `${d.name} (尚欠: $${d.remainingAmount})`;
-                    select.appendChild(opt);
-                }
-            });
-        }
-
-        function saveDebt() {
-            const date = document.getElementById('debt-date').value;
-            const amount = parseFloat(document.getElementById('debt-amount').value) || 0;
-
-            if(currentDebtOp === 'new') {
-                const name = document.getElementById('debt-name').value || '未命名債務';
-                const newId = Date.now();
-                db.debt.push({ id: newId, name, initialAmount: amount, remainingAmount: amount });
-                db.debtRecords.unshift({ id: newId, debtId: newId, date, type: 'new', amount, name });
-            } else {
-                const debtId = parseInt(document.getElementById('debt-select-id').value);
-                const targetDebt = db.debt.find(d => d.id === debtId);
-                if(targetDebt) {
-                    targetDebt.remainingAmount = Math.max(0, targetDebt.remainingAmount - amount);
-                    db.debtRecords.unshift({ id: Date.now(), debtId, date, type: 'pay', amount, name: `還款: ${targetDebt.name}` });
-                }
-            }
-            closeModal('debt');
-            updateAllViews();
-            document.getElementById('debt-name').value = '';
-            document.getElementById('debt-amount').value = '';
-        }
-
-        function undoDebt() {
-            if(db.debtRecords.length > 0) {
-                const lastRec = db.debtRecords.shift();
-                if(lastRec.type === 'new') {
-                    db.debt = db.debt.filter(d => d.id !== lastRec.debtId);
-                } else {
-                    const targetDebt = db.debt.find(d => d.id === lastRec.debtId);
-                    if(targetDebt) {
-                        targetDebt.remainingAmount += lastRec.amount;
-                    }
-                }
-                updateAllViews();
-            } else {
-                alert('沒有可復原的紀錄');
-            }
-        }
-
-        function resetAllDebt() {
-            if(confirm('確定要清除所有債務資料嗎？')) {
-                db.debt = [];
-                db.debtRecords = [];
-                updateAllViews();
-            }
-        }
-
-        // --- RENDER LIST HELPERS ---
-        function renderFoodList(arr) {
-            const container = document.getElementById('food-history-list');
-            container.innerHTML = arr.length === 0 ? '<p style="text-align:center; color:#6b7280; padding:20px;">本月暫無飲食紀錄</p>' : '';
-            arr.forEach(item => {
-                const isSaved = item.saved >= 0;
-                container.innerHTML += `
-                    <div class="history-card">
-                        <div class="history-info">
-                            <div class="history-date">${item.date}</div>
-                            <div class="history-desc">${item.name}</div>
-                            <div style="font-size:0.75rem; color:#6b7280;">洗費: $${item.spent} | 預算: $100</div>
-                        </div>
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <div class="history-amount" style="color: ${isSaved ? 'var(--success)' : 'var(--danger)'}">
-                                ${isSaved ? '慳咗 +$' : '超支 -$'}${Math.abs(item.saved).toFixed(1)}
+                historyListEl.innerHTML = kmbCycles.slice(1).map(c => {
+                    let saved = 0;
+                    c.records.forEach(r => {
+                        if (r.type === 'A') saved += r.price;
+                        else if (r.type === 'B') saved += (r.price * 0.73);
+                        else if (r.type === 'R') saved += r.price;
+                    });
+                    const net = saved - 834;
+                    return `
+                        <div class="history-card">
+                            <div class="history-header">
+                                <span>月票期數 #${c.id}</span>
+                                <span>起始日：${c.startDate}</span>
                             </div>
-                            <button class="delete-item-btn" onclick="deleteItem('food', ${item.id})">×</button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        function renderKmbList(arr) {
-            const container = document.getElementById('kmb-history-list');
-            container.innerHTML = arr.length === 0 ? '<p style="text-align:center; color:#6b7280; padding:20px;">本月暫無搭車紀錄</p>' : '';
-            arr.forEach(item => {
-                container.innerHTML += `
-                    <div class="history-card">
-                        <div class="history-info">
-                            <div class="history-date">${item.date}</div>
-                            <div class="history-desc">${item.route}</div>
-                        </div>
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <div class="history-amount" style="color: var(--primary);">+$${item.fare}</div>
-                            <button class="delete-item-btn" onclick="deleteItem('kmb', ${item.id})">×</button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        function renderSportList(arr) {
-            const container = document.getElementById('sport-history-list');
-            container.innerHTML = arr.length === 0 ? '<p style="text-align:center; color:#6b7280; padding:20px;">本月暫無運動紀錄</p>' : '';
-            arr.forEach(item => {
-                container.innerHTML += `
-                    <div class="history-card">
-                        <div class="history-info">
-                            <div class="history-date">${item.date}</div>
-                            <div class="history-desc">${item.type} - ${item.dist} km</div>
-                        </div>
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <div class="history-amount" style="color: var(--sport-green);">${item.cal} kcal</div>
-                            <button class="delete-item-btn" onclick="deleteItem('sport', ${item.id})">×</button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        function renderLoveList(arr) {
-            const container = document.getElementById('love-history-list');
-            container.innerHTML = arr.length === 0 ? '<p style="text-align:center; color:#6b7280; padding:20px;">本月暫無拍拖紀錄</p>' : '';
-            arr.forEach(item => {
-                container.innerHTML += `
-                    <div class="history-card">
-                        <div class="history-info">
-                            <div class="history-date">${item.date}</div>
-                            <div class="history-desc">${item.name}</div>
-                        </div>
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <div class="history-amount" style="color: var(--kmb-red);">-$${item.spent}</div>
-                            <button class="delete-item-btn" onclick="deleteItem('love', ${item.id})">×</button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        function renderTripList() {
-            const container = document.getElementById('trip-history-list');
-            container.innerHTML = db.trip.length === 0 ? '<p style="text-align:center; color:#6b7280; padding:20px;">暫無旅遊儲蓄紀錄</p>' : '';
-            db.trip.forEach(item => {
-                container.innerHTML += `
-                    <div class="history-card">
-                        <div class="history-info">
-                            <div class="history-date">${item.date}</div>
-                            <div class="history-desc">${item.name}</div>
-                        </div>
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <div class="history-amount" style="color: var(--trip-blue);">+$${item.amount}</div>
-                            <button class="delete-item-btn" onclick="deleteItem('trip', ${item.id})">×</button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
-
-        function renderDebtSummary() {
-            const container = document.getElementById('debt-item-list');
-            container.innerHTML = db.debt.length === 0 ? '<p style="text-align:center; color:#6b7280; padding:20px;">暫無債務項目</p>' : '';
-            db.debt.forEach(d => {
-                container.innerHTML += `
-                    <div class="history-card">
-                        <div class="history-info">
-                            <div class="history-desc">${d.name}</div>
-                            <div style="font-size:0.75rem; color:#6b7280;">初始總額: $${d.initialAmount}</div>
-                        </div>
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <div class="history-amount" style="color: ${d.remainingAmount > 0 ? 'var(--danger)' : 'var(--success)'};">
-                                尚欠: $${d.remainingAmount}
+                            <div class="history-summary">
+                                <div>記錄筆數：${c.records.length} 筆</div>
+                                <div>總共慳咗：$${saved.toFixed(1)}</div>
+                                <div>淨收益：<span style="color: ${net >= 0 ? 'var(--success)' : 'var(--danger)'};">$${net.toFixed(1)}</span></div>
                             </div>
                         </div>
-                    </div>
-                `;
-            });
+                    `;
+                }).join('');
+            }
+            document.getElementById('transit-history-modal').classList.add('active');
         }
 
-        function renderDebtRecords() {
-            const container = document.getElementById('debt-history-list');
-            container.innerHTML = db.debtRecords.length === 0 ? '<p style="text-align:center; color:#6b7280; padding:20px;">暫無還款/借入紀錄</p>' : '';
-            db.debtRecords.forEach(r => {
-                container.innerHTML += `
-                    <div class="history-card">
-                        <div class="history-info">
-                            <div class="history-date">${r.date}</div>
-                            <div class="history-desc">${r.name}</div>
+        function closeTransitHistoryModal() {
+            document.getElementById('transit-history-modal').classList.remove('active');
+        }
+
+        // Bookmark management inside transit
+        function openCreateBookmarkModal() {
+            renderBookmarkManageList();
+            document.getElementById('create-bookmark-modal').classList.add('active');
+        }
+
+        function closeCreateBookmarkModal() {
+            document.getElementById('create-bookmark-modal').classList.remove('active');
+            populateBookmarkDropdown();
+        }
+
+        function saveNewBookmark() {
+            const name = document.getElementById('bm-input-name').value.trim();
+            const type = document.getElementById('bm-input-type').value;
+            const price = parseFloat(document.getElementById('bm-input-price').value);
+
+            if (!name || isNaN(price)) {
+                alert('請完整填寫書籤名稱與金額！');
+                return;
+            }
+
+            kmbBookmarks.push({ name, type, price });
+            localStorage.setItem('kmb_bookmarks_v1', JSON.stringify(kmbBookmarks));
+
+            document.getElementById('bm-input-name').value = '';
+            document.getElementById('bm-input-price').value = '';
+            renderBookmarkManageList();
+        }
+
+        function deleteBookmark(idx) {
+            kmbBookmarks.splice(idx, 1);
+            localStorage.setItem('kmb_bookmarks_v1', JSON.stringify(kmbBookmarks));
+            renderBookmarkManageList();
+        }
+
+        function renderBookmarkManageList() {
+            const listEl = document.getElementById('bookmark-manage-list');
+            if (!listEl) return;
+            if (kmbBookmarks.length === 0) {
+                listEl.innerHTML = '<div style="color:#9ca3af; font-size:0.8rem; text-align:center;">無常用書籤</div>';
+                return;
+            }
+            listEl.innerHTML = kmbBookmarks.map((bm, idx) => `
+                <div class="bookmark-item">
+                    <span style="font-size: 0.82rem; font-weight:600;">${bm.name} ($${bm.price})</span>
+                    <button type="button" class="bookmark-del-btn" onclick="deleteBookmark(${idx})">刪除</button>
+                </div>
+            `).join('');
+        }
+
+
+        // ==================== FOOD MODULE JAVASCRIPT ====================
+        let foodCycles = JSON.parse(localStorage.getItem('food_cycles_v1') || '[]');
+
+        if (foodCycles.length === 0) {
+            foodCycles = [{
+                id: 1,
+                startDate: new Date().toISOString().split('T')[0],
+                records: []
+            }];
+            localStorage.setItem('food_cycles_v1', JSON.stringify(foodCycles));
+        }
+
+        let selectedFoodType = '正常餐';
+
+        function selectFoodType(type) {
+            selectedFoodType = type;
+            document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('active'));
+            if (type === '正常餐') {
+                document.getElementById('btn-simple').classList.add('active');
+            }
+        }
+
+        function renderFood() {
+            const currentCycle = foodCycles[0];
+            document.getElementById('food-cycle-id').innerText = `週期 #${currentCycle.id} (始於 ${currentCycle.startDate})`;
+
+            let totalBalance = 0;
+
+            currentCycle.records.forEach(r => {
+                const budget = 100;
+                const diff = budget - r.cost;
+                totalBalance += diff;
+            });
+
+            document.getElementById('total-balance').innerText = `$${totalBalance.toFixed(1)}`;
+            document.getElementById('total-balance').className = `kpi-value ${totalBalance >= 0 ? '' : 'red'}`;
+
+            const listContainer = document.getElementById('food-records-list');
+            if (currentCycle.records.length === 0) {
+                listContainer.innerHTML = '<div style="text-align:center; color:#9ca3af; padding:20px;">本週期尚無餐食紀錄</div>';
+            } else {
+                listContainer.innerHTML = currentCycle.records.map(r => {
+                    const budget = 100;
+                    const diff = budget - r.cost;
+                    const isSurplus = diff >= 0;
+
+                    return `
+                        <div class="record-card">
+                            <div class="record-info">
+                                <div><span class="badge badge-simple">正常餐</span> ${r.name}</div>
+                                <div>日期：${r.date} | 預算 $${budget} | 實付 $${r.cost.toFixed(1)}</div>
+                            </div>
+                            <div class="record-amount">
+                                <div class="record-cost ${isSurplus ? 'surplus' : 'deficit'}">
+                                    ${isSurplus ? '+' : ''}$${diff.toFixed(1)}
+                                </div>
+                                <div style="margin-top: 4px;">
+                                    <button class="btn-edit-item" onclick="openEditFoodModal(${r.id})">編輯</button>
+                                    <button class="bookmark-del-btn" onclick="deleteFoodRecord(${r.id})" style="margin-top:2px;">刪除</button>
+                                </div>
+                            </div>
                         </div>
-                        <div class="history-amount" style="color: ${r.type === 'new' ? 'var(--danger)' : 'var(--success)'};">
-                            ${r.type === 'new' ? '+' : '-'}$${r.amount}
+                    `;
+                }).join('');
+            }
+        }
+
+        function openFoodModal() {
+            document.getElementById('food-input-date').valueAsDate = new Date();
+            document.getElementById('food-input-name').value = '';
+            document.getElementById('food-input-cost').value = '';
+            selectFoodType('正常餐');
+            populateFoodCycleJumpOptions('food-cycle-jump');
+            document.getElementById('food-modal').classList.add('active');
+        }
+
+        function closeFoodModal() {
+            document.getElementById('food-modal').classList.remove('active');
+        }
+
+        function populateFoodCycleJumpOptions(selectId) {
+            const selectEl = document.getElementById(selectId);
+            if (!selectEl) return;
+            selectEl.innerHTML = foodCycles.map((c, idx) => `
+                <option value="${c.id}">週期 #${c.id} (${c.startDate}${idx === 0 ? ' - 當前' : ''})</option>
+            `).join('');
+            selectEl.value = foodCycles[0].id;
+        }
+
+        function onFoodCycleJumpChange() {
+            // 切換期數
+        }
+
+        function saveFoodRecord() {
+            const targetCycleId = parseInt(document.getElementById('food-cycle-jump').value) || foodCycles[0].id;
+            const date = document.getElementById('food-input-date').value;
+            const name = document.getElementById('food-input-name').value.trim();
+            const cost = parseFloat(document.getElementById('food-input-cost').value);
+
+            if (!date || !name || isNaN(cost)) {
+                alert('請完整填寫日期、餐點名稱與金額！');
+                return;
+            }
+
+            const targetCycle = foodCycles.find(c => c.id === targetCycleId);
+            if (!targetCycle) return;
+
+            const newRecord = {
+                id: Date.now(),
+                date: date,
+                type: selectedFoodType,
+                name: name,
+                cost: cost
+            };
+
+            targetCycle.records.unshift(newRecord);
+            localStorage.setItem('food_cycles_v1', JSON.stringify(foodCycles));
+            closeFoodModal();
+            renderFood();
+            updateDashboardOverview();
+        }
+
+        function deleteLastFoodStep() {
+            const currentCycle = foodCycles[0];
+            if (currentCycle.records.length === 0) {
+                alert('本週期沒有記錄可刪除！');
+                return;
+            }
+            if (confirm('確定要刪除本週期上一筆餐食記錄嗎？')) {
+                currentCycle.records.shift();
+                localStorage.setItem('food_cycles_v1', JSON.stringify(foodCycles));
+                renderFood();
+                updateDashboardOverview();
+            }
+        }
+
+        function deleteFoodRecord(id) {
+            if (confirm('確定要刪除這筆紀錄嗎？')) {
+                const currentCycle = foodCycles[0];
+                currentCycle.records = currentCycle.records.filter(r => r.id !== id);
+                localStorage.setItem('food_cycles_v1', JSON.stringify(foodCycles));
+                renderFood();
+                updateDashboardOverview();
+            }
+        }
+
+        function openEditFoodModal(id) {
+            const currentCycle = foodCycles[0];
+            const rec = currentCycle.records.find(r => r.id === id);
+            if (!rec) return;
+
+            document.getElementById('edit-food-id').value = rec.id;
+            document.getElementById('edit-food-date').value = rec.date;
+            document.getElementById('edit-food-type').value = rec.type || '正常餐';
+            document.getElementById('edit-food-name').value = rec.name;
+            document.getElementById('edit-food-cost').value = rec.cost;
+            document.getElementById('edit-food-modal').classList.add('active');
+        }
+
+        function closeEditFoodModal() {
+            document.getElementById('edit-food-modal').classList.remove('active');
+        }
+
+        function updateFoodRecord() {
+            const id = parseInt(document.getElementById('edit-food-id').value);
+            const date = document.getElementById('edit-food-date').value;
+            const type = document.getElementById('edit-food-type').value;
+            const name = document.getElementById('edit-food-name').value.trim();
+            const cost = parseFloat(document.getElementById('edit-food-cost').value);
+
+            if (!date || !name || isNaN(cost)) {
+                alert('請完整填寫各項欄位！');
+                return;
+            }
+
+            const currentCycle = foodCycles[0];
+            const rec = currentCycle.records.find(r => r.id === id);
+            if (rec) {
+                rec.date = date;
+                rec.type = type;
+                rec.name = name;
+                rec.cost = cost;
+                localStorage.setItem('food_cycles_v1', JSON.stringify(foodCycles));
+            }
+
+            closeEditFoodModal();
+            renderFood();
+            updateDashboardOverview();
+        }
+
+        function confirmResetFoodCycle() {
+            if (confirm('確定要開啟新一期食幾多慳幾多週期嗎？當前週期將會封存至歷史紀錄。')) {
+                const newId = foodCycles.length + 1;
+                const newCycle = {
+                    id: newId,
+                    startDate: new Date().toISOString().split('T')[0],
+                    records: []
+                };
+                foodCycles.unshift(newCycle);
+                localStorage.setItem('food_cycles_v1', JSON.stringify(foodCycles));
+                renderFood();
+                updateDashboardOverview();
+            }
+        }
+
+        function openFoodHistoryModal() {
+            const historyListEl = document.getElementById('food-history-list');
+            if (foodCycles.length <= 1) {
+                historyListEl.innerHTML = '<div style="text-align:center; color:#9ca3af; padding:20px;">暫無歷屆週期封存紀錄</div>';
+            } else {
+                historyListEl.innerHTML = foodCycles.slice(1).map(c => {
+                    let balance = 0;
+                    c.records.forEach(r => {
+                        const budget = 100;
+                        balance += (budget - r.cost);
+                    });
+                    return `
+                        <div class="history-card">
+                            <div class="history-header">
+                                <span>週期 #${c.id}</span>
+                                <span>起始日：${c.startDate}</span>
+                            </div>
+                            <div class="history-summary">
+                                <div>記錄筆數：${c.records.length} 筆</div>
+                                <div>結餘：<span style="color: ${balance >= 0 ? 'var(--success)' : 'var(--danger)'};">$${balance.toFixed(1)}</span></div>
+                            </div>
                         </div>
-                    </div>
-                `;
-            });
-        }
-
-        function deleteItem(module, id) {
-            if(confirm('確定要刪除此筆紀錄嗎？')) {
-                db[module] = db[module].filter(item => item.id !== id);
-                updateAllViews();
+                    `;
+                }).join('');
             }
+            document.getElementById('food-history-modal').classList.add('active');
         }
 
-        // --- CALENDAR RENDERER ---
-        function changeCalMonth(delta) {
-            calMonth += delta;
-            if(calMonth > 12) { calMonth = 1; calYear++; }
-            if(calMonth < 1) { calMonth = 12; calYear--; }
-            renderCalendar(activeCalModule);
+        function closeFoodHistoryModal() {
+            document.getElementById('food-history-modal').classList.remove('active');
         }
 
-        function renderCalendar(module) {
-            const titleEl = document.getElementById(`${module}-cal-title`);
-            if(titleEl) titleEl.innerText = `${calYear}年${calMonth}月`;
 
-            const gridEl = document.getElementById(`${module}-cal-grid`);
-            if(!gridEl) return;
-            gridEl.innerHTML = '';
-
-            // Weekday headers
-            ['日', '一', '二', '三', '四', '五', '六'].forEach(w => {
-                gridEl.innerHTML += `<div class="cal-weekday">${w}</div>`;
-            });
-
-            const firstDayIndex = new Date(calYear, calMonth - 1, 1).getDay();
-            const daysInMonth = new Date(calYear, calMonth, 0).getDate();
-            const prevDaysInMonth = new Date(calYear, calMonth - 1, 0).getDate();
-
-            // Previous month padding days
-            for(let i = firstDayIndex - 1; i >= 0; i--) {
-                const dayNum = prevDaysInMonth - i;
-                gridEl.innerHTML += `<div class="cal-day other-month"><span class="cal-day-num">${dayNum}</span></div>`;
-            }
-
-            // Current month days
-            const todayStr = new Date().toISOString().split('T')[0];
-
-            for(let d = 1; d <= daysInMonth; d++) {
-                const mStr = calMonth < 10 ? '0' + calMonth : calMonth;
-                const dStr = d < 10 ? '0' + d : d;
-                const dateKey = `${calYear}-${mStr}-${dStr}`;
-                const isToday = (dateKey === todayStr);
-
-                // Find data for this date in module
-                let contentHTML = '';
-                if(module === 'food') {
-                    const match = db.food.filter(x => x.date === dateKey);
-                    if(match.length > 0) {
-                        const totalSpent = match.reduce((a,c) => a + c.spent, 0);
-                        const totalSaved = match.reduce((a,c) => a + c.saved, 0);
-                        contentHTML = `<div class="cal-day-content" style="background:${totalSaved>=0?'#d1fae5':'#fee2e2'}; color:${totalSaved>=0?'#065f46':'#991b1b'}">$${totalSaved.toFixed(0)}</div>`;
-                    }
-                } else if(module === 'kmb') {
-                    const match = db.kmb.filter(x => x.date === dateKey);
-                    if(match.length > 0) {
-                        contentHTML = `<div class="cal-day-content" style="background:#fee2e2; color:#991b1b">${match.length}程</div>`;
-                    }
-                } else if(module === 'sport') {
-                    const match = db.sport.filter(x => x.date === dateKey);
-                    if(match.length > 0) {
-                        const dist = match.reduce((a,c) => a + c.dist, 0);
-                        contentHTML = `<div class="cal-day-content" style="background:#ccfbf1; color:#0f766e">${dist.toFixed(1)}km</div>`;
-                    }
-                } else if(module === 'love') {
-                    const match = db.love.filter(x => x.date === dateKey);
-                    if(match.length > 0) {
-                        const spent = match.reduce((a,c) => a + c.spent, 0);
-                        contentHTML = `<div class="cal-day-content" style="background:#ede9fe; color:#5b21b6">-$${spent.toFixed(0)}</div>`;
-                    }
-                }
-
-                gridEl.innerHTML += `
-                    <div class="cal-day ${isToday ? 'today' : ''}">
-                        <span class="cal-day-num">${d}</span>
-                        ${contentHTML}
-                    </div>
-                `;
-            }
-        }
+        // INITIALIZATION ON LOAD
+        window.addEventListener('DOMContentLoaded', () => {
+            updateCurrentDateDisplay();
+            initDashboardDateSelectors();
+            renderTransit();
+            renderFood();
+            renderSport();
+            renderLove();
+            renderTrips();
+            renderDebt();
+            updateDashboardOverview();
+        });
     </script>
 </body>
 </html>
