@@ -313,9 +313,9 @@
 
         <!-- Backup & Restore Data Bar -->
         <div class="backup-bar">
-            <button class="backup-btn" onclick="exportDataFile()">💾 匯出紀錄 (.doc)</button>
-            <button class="backup-btn" onclick="triggerImportFile()">📂 匯入紀錄 (.doc)</button>
-            <input type="file" id="import-file-input" style="display: none;" accept=".doc,.docx,.txt,.json" onchange="importDataFile(event)">
+            <button class="backup-btn" onclick="exportDataFile()">💾 顯示匯出紀錄 (.txt)</button>
+            <button class="backup-btn" onclick="triggerImportFile()">📂 匯入紀錄 (.txt)</button>
+            <input type="file" id="import-file-input" style="display: none;" accept=".txt,.json" onchange="importDataFile(event)">
         </div>
 
         <!-- Bottom Left Date Display -->
@@ -514,6 +514,23 @@
 
 
     <!-- ==================== MODALS ==================== -->
+
+    <!-- Export Content Preview Modal -->
+    <div class="modal" id="export-preview-modal">
+        <div class="modal-content" style="max-width: 480px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h2 style="font-size: 1.2rem; color: var(--primary);">📄 匯出紀錄內容 (.txt)</h2>
+                <button class="btn-cancel" onclick="closeExportPreviewModal()" style="padding: 4px 10px;">關閉</button>
+            </div>
+            <div class="form-group">
+                <label>以下為原定會儲存進 txt 檔的備份內容：</label>
+                <textarea id="export-preview-textarea" class="form-control" rows="12" readonly style="font-family: monospace; font-size: 0.8rem; background: #f9fafb;"></textarea>
+            </div>
+            <div class="modal-actions" style="grid-template-columns: 1fr;">
+                <button class="btn-save" onclick="closeExportPreviewModal()">返回 Dashboard</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Edit Transit Modal -->
     <div class="modal" id="edit-transit-modal">
@@ -2795,7 +2812,7 @@
             document.getElementById('home-total-expense').innerText = `$${grandTotalExpense.toFixed(1)}`;
         }
 
-        // Export & Import Backup (.doc format)
+        // Export & Import Backup (Show txt backup content in modal with exit dashboard)
         function exportDataFile() {
             const backupData = {
                 sportRecords,
@@ -2811,13 +2828,14 @@
                 foodRecords,
                 foodPastCycles
             };
-            const dataStr = "data:application/msword;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
-            const downloadAnchor = document.createElement('a');
-            downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `Maladoukae_Backup_${new Date().toISOString().substring(0,10)}.doc`);
-            document.body.appendChild(downloadAnchor);
-            downloadAnchor.click();
-            downloadAnchor.remove();
+            const jsonString = JSON.stringify(backupData, null, 2);
+            document.getElementById('export-preview-textarea').value = jsonString;
+            document.getElementById('export-preview-modal').classList.add('active');
+        }
+
+        function closeExportPreviewModal() {
+            document.getElementById('export-preview-modal').classList.remove('active');
+            switchView('dashboard');
         }
 
         function triggerImportFile() {
