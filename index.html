@@ -373,7 +373,7 @@
         <div class="kpi-container">
             <div class="kpi-card">
                 <div class="kpi-title">本週期豪華大餐剩額</div>
-                <div class="kpi-value" id="luxury-left">4 次</div>
+                <div class="kpi-value" id="luxury-left">3 次</div>
             </div>
             <div class="kpi-card">
                 <div class="kpi-title">食幾多慳幾多結餘</div>
@@ -992,7 +992,6 @@
         let currentDashboardMonth = String(new Date().getMonth() + 1).padStart(2, '0');
 
         function initDashboardDateSelectors() {
-            // 自動初始化按鈕的 active 狀態配合當日日期
             document.querySelectorAll('.year-btn').forEach(btn => {
                 if (btn.getAttribute('onclick').includes(`'${currentDashboardYear}'`)) {
                     btn.classList.add('active');
@@ -2437,6 +2436,22 @@
         let foodPastCycles = JSON.parse(localStorage.getItem('god_cookery_past_cycles') || '[]');
         let currentSelectedFoodType = '豪華大餐';
 
+        // 需求2：當歷史記錄嘅同一個周期出現多過一次 淨係保留最新嘅個
+        function getUniqueFoodRecords() {
+            const seen = new Set();
+            const unique = [];
+            // foodRecords係最新喺前面 (unshift)，所以順序行落去遇到同一id或者完全重複既可以過濾
+            // 如果指既係「同一周期入面重複既記錄」，可以用id或者組合key黎判斷，以下確保只保留最新既一筆
+            for (const r of foodRecords) {
+                // 如果係用唯一id去重：
+                if (!seen.has(r.id)) {
+                    seen.add(r.id);
+                    unique.push(r);
+                }
+            }
+            return unique;
+        }
+
         function populateFoodCycleJump() {
             const selectEl = document.getElementById('food-cycle-jump');
             if (!selectEl) return;
@@ -2522,14 +2537,15 @@
         }
 
         function deleteLastFoodStep() {
-            const activeIndex = foodRecords.findIndex(r => r.cycleId === foodCycleId && r.type !== '豪華大餐歸零結算');
-            if (activeIndex === -1) {
+            const uniqueRecords = getUniqueFoodRecords();
+            const activeIndexInUnique = uniqueRecords.findIndex(r => r.cycleId === foodCycleId && r.type !== '豪華大餐歸零結算');
+            if (activeIndexInUnique === -1) {
                 alert('本期沒有可刪除的餐食記錄！');
                 return;
             }
-            const lastRecord = foodRecords[activeIndex];
-            if (confirm(`確定要刪除最近輸入的紀錄嗎？\n\n📌 「${lastRecord.name}」`)) {
-                foodRecords.splice(activeIndex, 1);
+            const target = uniqueRecords[activeIndexInUnique];
+            if (confirm(`確定要刪除最近輸入的紀錄嗎？\n\n📌 「${target.name}」`)) {
+                foodRecords = foodRecords.filter(r => r.id !== target.id);
                 localStorage.setItem('god_cookery_records_v2', JSON.stringify(foodRecords));
                 renderFood();
                 updateDashboardOverview();
@@ -2546,9 +2562,10 @@
         }
 
         function settleLuxuryReset() {
-            const activeRecords = foodRecords.filter(r => r.cycleId === foodCycleId);
+            const activeRecords = getUniqueFoodRecords().filter(r => r.cycleId === foodCycleId);
             const luxuryCount = activeRecords.filter(r => r.type === '豪華大餐').length;
-            const luxuryLeft = 4 - luxuryCount;
+            // 需求3：豪華大餐嘅次數由四改做三
+            let luxuryLeft = 3 - luxuryCount;
 
             if (luxuryLeft <= 0) {
                 alert('目前豪華大餐剩餘次數不大於 0（或已歸零），無需進行歸零結算！');
@@ -2582,7 +2599,7 @@
         }
 
         function confirmResetFoodCycle() {
-            const activeRecords = foodRecords.filter(r => r.cycleId === foodCycleId);
+            const activeRecords = getUniqueFoodRecords().filter(r => r.cycleId === foodCycleId);
             if (confirm('確定要重置食幾多慳幾多週期嗎？當前期的紀錄將會存檔。')) {
                 const totalDiff = activeRecords.reduce((sum, r) => sum + r.diff, 0);
 
@@ -2634,11 +2651,12 @@
 
         function renderFood() {
             document.getElementById('food-cycle-id').innerText = `週期 #${foodCycleId}`;
-            const activeRecords = foodRecords.filter(r => r.cycleId === foodCycleId);
+            const activeRecords = getUniqueFoodRecords().filter(r => r.cycleId === foodCycleId);
 
             const luxuryCount = activeRecords.filter(r => r.type === '豪華大餐').length;
             const hasResetSettled = activeRecords.some(r => r.isResetSettlement);
-            let luxuryLeft = 4 - luxuryCount;
+            // 需求3：豪華大餐次數基準改為 3
+            let luxuryLeft = 3 - luxuryCount;
             if (hasResetSettled || luxuryLeft < 0) {
                 luxuryLeft = 0;
             }
@@ -2716,7 +2734,7 @@
             // 1. Food KPI & Filter by selected Year & Month
             let foodTotalBal = 0;
             let foodCount = 0;
-            foodRecords.forEach(r => {
+            getUniqueFoodRecords().forEach(r => {
                 if (matchSelectedDate(r.date)) {
                     foodTotalBal += (r.diff || 0);
                     foodCount++;
@@ -2772,9 +2790,9 @@
             const receivablesTotal = debtRecords.filter(r => r.kind === 'receivable').reduce((sum, r) => sum + r.money, 0);
             document.getElementById('dash-btn-debt').innerText = `欠:$${payablesTotal.toFixed(1)} / 收:$${receivablesTotal.toFixed(1)}`;
 
-            // 7. Total Expense (按照此前需求：食幾多慳幾多 spending + 九巴月票 spending + 運動 spending + 錢變成喜歡的形狀 spending)
+            // 7. Total Expense
             let foodSpendingTotal = 0;
-            foodRecords.forEach(r => {
+            getUniqueFoodRecords().forEach(r => {
                 if (matchSelectedDate(r.date) && !r.isResetSettlement && r.cost > 0) {
                     foodSpendingTotal += r.cost;
                 }
