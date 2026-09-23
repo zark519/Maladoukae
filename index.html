@@ -526,7 +526,8 @@
                 <label>以下為原定會儲存進 txt 檔的備份內容：</label>
                 <textarea id="export-preview-textarea" class="form-control" rows="12" readonly style="font-family: monospace; font-size: 0.8rem; background: #f9fafb;"></textarea>
             </div>
-            <div class="modal-actions" style="grid-template-columns: 1fr;">
+            <div class="modal-actions" style="grid-template-columns: 1fr 1fr;">
+                <button class="btn-save" style="background: var(--success);" onclick="copyExportText()">📋 複製文字</button>
                 <button class="btn-save" onclick="closeExportPreviewModal()">返回 Dashboard</button>
             </div>
         </div>
@@ -2831,6 +2832,23 @@
             const jsonString = JSON.stringify(backupData, null, 2);
             document.getElementById('export-preview-textarea').value = jsonString;
             document.getElementById('export-preview-modal').classList.add('active');
+        }
+
+        function copyExportText() {
+            const textarea = document.getElementById('export-preview-textarea');
+            textarea.select();
+            textarea.setSelectionRange(0, 99999); // For mobile devices
+            try {
+                navigator.clipboard.writeText(textarea.value).then(() => {
+                    alert('已成功複製所有文字到剪貼簿！');
+                }).catch(err => {
+                    document.execCommand('copy');
+                    alert('已成功複製所有文字到剪貼簿！');
+                });
+            } catch (e) {
+                document.execCommand('copy');
+                alert('已成功複製所有文字到剪貼簿！');
+            }
         }
 
         function closeExportPreviewModal() {
