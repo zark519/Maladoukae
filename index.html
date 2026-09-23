@@ -182,9 +182,9 @@
         .badge-love { background: #ede9fe; color: #6d28d9; }
         .badge-trip { background: #e0f2fe; color: #0369a1; }
         
-        .badge-tier-green { background: #d1fae5; color: #065f46; }
-        .badge-tier-blue { background: #e0f2fe; color: #0369a1; }
-        .badge-tier-red { background: #fee2e2; color: #991b1b; }
+        .badge-tier-green { background: #d1fae5; color: #065f46; font-weight: 700; }
+        .badge-tier-blue { background: #e0f2fe; color: #0369a1; font-weight: 700; }
+        .badge-tier-red { background: #fee2e2; color: #991b1b; font-weight: 700; }
 
         .history-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-bottom: 12px; }
         .history-header { display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 8px; border-bottom: 1px solid #cbd5e1; padding-bottom: 6px; align-items: center; }
@@ -340,7 +340,7 @@
 
         <div class="kpi-container">
             <div class="kpi-card">
-                <div class="kpi-title">月票成本 ($834)[cite: 3]</div>
+                <div class="kpi-title">月票成本 ($834)</div>
                 <div class="kpi-value red" id="kmb-net-status">尚未回本</div>
             </div>
             <div class="kpi-card">
@@ -361,7 +361,7 @@
 
         <div class="list-header">
             <div class="list-title" style="color: var(--kmb-red);">本期搭車紀錄</div>
-            <div class="cycle-badge" id="transit-cycle-id">月票期數 #1[cite: 3]</div>
+            <div class="cycle-badge" id="transit-cycle-id">月票期數 #1</div>
         </div>
         <div id="transit-records-list"></div>
     </div>
@@ -386,7 +386,7 @@
 
         <div class="kpi-container">
             <div class="kpi-card">
-                <div class="kpi-title">食幾多慳幾多結餘 (每餐預算 $100)[cite: 3, 4]</div>
+                <div class="kpi-title">食幾多慳幾多結餘 (每餐預算 $100)</div>
                 <div class="kpi-value" id="total-balance">$0</div>
             </div>
         </div>
@@ -403,7 +403,7 @@
 
         <div class="list-header">
             <div class="list-title">當前週期消費紀錄</div>
-            <div class="cycle-badge" id="food-cycle-id">週期 #2[cite: 3]</div>
+            <div class="cycle-badge" id="food-cycle-id">週期 #2</div>
         </div>
         <div id="food-records-list"></div>
     </div>
@@ -585,7 +585,7 @@
                 <input type="text" id="edit-food-name" class="form-control">
             </div>
             <div class="form-group">
-                <label>食咗幾多錢 ($) (每餐預算固定 $100)[cite: 3, 4]</label>
+                <label>食咗幾多錢 ($) (每餐預算固定 $100)</label>
                 <input type="number" id="edit-food-cost" class="form-control" step="0.1">
             </div>
             <div class="modal-actions">
@@ -948,7 +948,7 @@
                 <input type="text" id="food-input-name" class="form-control" placeholder="例：日式燒肉放題">
             </div>
             <div class="form-group">
-                <label>食咗幾多錢 ($) (每餐預算固定 $100)[cite: 3, 4]</label>
+                <label>食咗幾多錢 ($) (每餐預算固定 $100)</label>
                 <input type="number" id="food-input-cost" class="form-control" placeholder="例：80">
             </div>
             <div class="modal-actions">
@@ -1090,7 +1090,7 @@
         let foodRecords = JSON.parse(localStorage.getItem('food_records_v1') || JSON.stringify(INITIAL_DATA.foodRecords));
 
         let currentTransitDisplayCycle = 'ALL';
-        let currentFoodDisplayCycle = 'ALL';
+        let currentFoodDisplayCycle = 'LATEST'; // 預設顯示最新週期
 
         // Ensure every record has a cycleId if not present
         transitRecords.forEach(r => { if(!r.cycleId) r.cycleId = 1; });
@@ -1493,6 +1493,11 @@
             const cycles = [...new Set(foodRecords.map(r => r.cycleId || 1))].sort((a,b)=>a-b);
             if(!cycles.includes(foodCycleId)) cycles.push(foodCycleId);
 
+            // 如果預設為 LATEST，自動將 currentFoodDisplayCycle 設為最新週期 (最大 cycleId)
+            if (currentFoodDisplayCycle === 'LATEST') {
+                currentFoodDisplayCycle = cycles.length > 0 ? Math.max(...cycles) : foodCycleId;
+            }
+
             let html = '<option value="ALL">全部週期 (All Cycles)</option>';
             cycles.forEach(c => {
                 html += `<option value="${c}">週期 #${c}</option>`;
@@ -1573,6 +1578,7 @@
         function confirmResetFoodCycle() {
             if(confirm('確定要重置並開啟新一期食幾多慳幾多週期嗎？')) {
                 foodCycleId += 1;
+                currentFoodDisplayCycle = foodCycleId; // 轉去新開嘅最新週期
                 saveAllData();
                 renderFood();
                 updateDashboardOverview();
@@ -1596,14 +1602,14 @@
 
         function updateFoodRecord() {
             const id = parseInt(document.getElementById('edit-food-id').value);
-            const cycleId = parseInt(document.getElementById('edit-food-cycle').value) || 1;
+            const cycleId = parseInt(document.getElementById('edit-food-cycle').value) < 1 ? 1 : parseInt(document.getElementById('edit-food-cycle').value) || 1;
             const date = document.getElementById('edit-food-date').value;
             const name = document.getElementById('edit-food-name').value.trim();
             const cost = parseFloat(document.getElementById('edit-food-cost').value);
 
             const idx = foodRecords.findIndex(r => r.id === id);
             if(idx !== -1) {
-                const budget = 100; // Fixed budget 100
+                const budget = 100;
                 const diff = budget - cost;
                 const type = cost > budget ? '豪華大餐' : '簡樸餐';
 
@@ -1652,22 +1658,43 @@
             if(filtered.length === 0) {
                 listEl.innerHTML = '<div style="text-align:center; color:#9ca3af; padding:20px;">暫無餐食記錄</div>';
             } else {
-                listEl.innerHTML = filtered.map(r => `
-                    <div class="record-card">
-                        <div class="record-info">
-                            <div><span class="badge badge-simple">${r.type}</span> ${r.name}</div>
-                            <div>日期：${r.date} | 週期 #${r.cycleId || 1} (預算 $${r.budget || 100})</div>
-                        </div>
-                        <div class="record-amount">
-                            <div class="record-cost">使費 $${r.cost}</div>
-                            <div class="record-diff ${r.diff >= 0 ? 'surplus' : 'deficit'}">${r.diff >= 0 ? '慳咗' : '超支'} $${Math.abs(r.diff)}</div>
-                            <div style="margin-top:4px;">
-                                <button class="btn-edit-item" onclick="openEditFoodModal(${r.id})">編輯</button>
-                                <button class="bookmark-del-btn" onclick="deleteFoodRecord(${r.id})">刪除</button>
+                listEl.innerHTML = filtered.map(r => {
+                    // 根據預算/消費金額判斷 3 個 Tier
+                    // 假設以 cost 嚟分： <50, >100, in between (50-100)
+                    let tierClass = '';
+                    let tierLabel = '';
+                    if (r.cost < 50) {
+                        tierClass = 'badge-tier-green';
+                        tierLabel = '超抵食！慳到笑🤣';
+                    } else if (r.cost > 100) {
+                        tierClass = 'badge-tier-red';
+                        tierLabel = '大出血豪使💸';
+                    } else {
+                        tierClass = 'badge-tier-blue';
+                        tierLabel = '正常發揮👍';
+                    }
+
+                    return `
+                        <div class="record-card">
+                            <div class="record-info">
+                                <div>
+                                    <span class="badge badge-simple">${r.type}</span>
+                                    <span class="badge ${tierClass}">${tierLabel}</span>
+                                    ${r.name}
+                                </div>
+                                <div>日期：${r.date} | 週期 #${r.cycleId || 1} (預算 $${r.budget || 100})</div>
+                            </div>
+                            <div class="record-amount">
+                                <div class="record-cost">使費 $${r.cost}</div>
+                                <div class="record-diff ${r.diff >= 0 ? 'surplus' : 'deficit'}">${r.diff >= 0 ? '慳咗' : '超支'} $${Math.abs(r.diff)}</div>
+                                <div style="margin-top:4px;">
+                                    <button class="btn-edit-item" onclick="openEditFoodModal(${r.id})">編輯</button>
+                                    <button class="bookmark-del-btn" onclick="deleteFoodRecord(${r.id})">刪除</button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
             }
         }
 
