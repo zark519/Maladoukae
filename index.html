@@ -794,6 +794,32 @@
         </div>
     </div>
 
+    <!-- Food Cycle Reset Select Record Modal -->
+    <div class="modal" id="food-reset-select-modal">
+        <div class="modal-content" style="max-width: 480px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h2 style="font-size: 1.2rem; color: var(--primary);">🔄 重置週期：選擇最後一筆記錄</h2>
+                <button class="btn-cancel" onclick="closeFoodResetSelectModal()" style="padding: 4px 10px;">取消</button>
+            </div>
+            <div class="form-group">
+                <label>請選擇哪一筆記錄作為本週期的最後一筆記錄（該記錄及之前的記錄會被歸入本週期歷史）：</label>
+                <div id="food-reset-candidates-list" style="max-height: 250px; overflow-y: auto; margin-top: 10px;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Food History Detail Modal (Retrieve Record) -->
+    <div class="modal" id="food-history-detail-modal">
+        <div class="modal-content" style="max-width: 480px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h2 style="font-size: 1.2rem; color: var(--primary);" id="food-history-detail-title">📦 週期歷史明細</h2>
+                <button class="btn-cancel" onclick="closeFoodHistoryDetailModal()" style="padding: 4px 10px;">關閉</button>
+            </div>
+            <div class="history-summary" id="food-history-detail-summary" style="margin-bottom: 12px;"></div>
+            <div id="food-history-detail-records" style="max-height: 250px; overflow-y: auto;"></div>
+        </div>
+    </div>
+
     <!-- Transit Modal (Manual Add / Edit) -->
     <div class="modal" id="transit-modal">
         <div class="modal-content">
@@ -980,7 +1006,7 @@
         let selectedDashboardYear = '2026';
         let selectedDashboardMonth = '09';
         let sportCurrentYear = 2026;
-        let sportCurrentMonth = 9; // 0-based or 1-based? Let's use 1-12
+        let sportCurrentMonth = 9;
         let currentEditingTripId = null;
         let currentDebtTab = 'payable';
 
@@ -1002,7 +1028,6 @@
         }
 
         function loadDefaultSampleData() {
-            // Load sample data provided in txt
             appData = {
               "sportRecords": [
                 { "id": 1789953128971, "date": "2026-09-24", "type": "有氧拳擊", "cost": 65 },
@@ -1104,7 +1129,7 @@
                 { "id": 1790078852421, "cycleId": 2, "date": "2026-09-22", "type": "簡樸餐", "name": "生滾湯飯皇", "cost": 44, "budget": 100, "diff": 56 },
                 { "id": 1790053386135, "date": "2026-09-20", "type": "豪華大餐歸零結算", "name": "豪華大餐歸零結算 (1次 x $100)", "cost": -100, "budget": 0, "diff": 100, "isResetSettlement": true, "settledCount": 1 },
                 { "id": 1790052899601, "cycleId": 2, "date": "2026-09-22", "type": "簡樸餐", "name": "NutriGo 餐盒", "cost": 71, "budget": 100, "diff": 29 },
-                { "id": 1790006794010, "date": "2026-09-21", "type": "簡樸餐", "name": "Da Vincenzo 意大利菜", "cost": 0, "budget": 100, "diff": 100 },
+                { "id": 1790006794010, "cycleId": 2, "date": "2026-09-21", "type": "簡樸餐", "name": "Da Vincenzo 意大利菜", "cost": 0, "budget": 100, "diff": 100 },
                 { "id": 1789970355786, "cycleId": 2, "date": "2026-09-21", "type": "簡樸餐", "name": "珍姐炸羊架飯", "cost": 88, "budget": 100, "diff": 12 },
                 { "id": 1789901786839, "cycleId": 1, "date": "2026-09-20", "type": "簡樸餐", "name": "阿杏飯團關東煮", "cost": 34.5, "budget": 100, "diff": 65.5 },
                 { "id": 1789901764416, "cycleId": 1, "date": "2026-09-20", "type": "簡樸餐", "name": "阿杏飯團", "cost": 42, "budget": 100, "diff": 58 },
@@ -1122,12 +1147,19 @@
                 { "id": 1789655231452, "cycleId": 1, "date": "2026-09-14", "type": "簡樸餐", "name": "NutriGo 餐盒", "cost": 71, "budget": 100, "diff": 29 }
               ],
               "foodPastCycles": [
-                { "cycleId": 1, "startDate": "2026-09-14", "endDate": "2026-09-20", "totalBalance": 608, "recordCount": 14 }
+                {
+                  "cycleId": 1,
+                  "startDate": "2026-09-14",
+                  "endDate": "2026-09-20",
+                  "totalBalance": 608,
+                  "recordCount": 14,
+                  "records": []
+                }
               ]
             };
         }
 
-        // Navigation Switcher
+        // View Switching
         function switchView(viewName) {
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
             document.getElementById('view-' + viewName).classList.add('active');
@@ -1136,138 +1168,156 @@
             renderAll();
         }
 
-        function renderAll() {
-            renderDashboard();
-            renderTransitView();
-            renderFoodView();
-            renderSportView();
-            renderLoveView();
-            renderTripView();
-            renderDebtView();
-        }
-
-        // Dashboard Filters & Calculations
-        function selectDashboardYear(y, btn) {
-            selectedDashboardYear = y;
+        function selectDashboardYear(year, btn) {
+            selectedDashboardYear = year;
             document.querySelectorAll('.year-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            document.getElementById('current-selected-year-label').innerText = y === 'ALL' ? '全部年份' : y + '年';
-            renderAll();
+            document.getElementById('current-selected-year-label').innerText = year === 'ALL' ? '全部年份' : (year + '年');
+            renderDashboard();
         }
 
-        function selectDashboardMonth(m, btn) {
-            selectedDashboardMonth = m;
+        function selectDashboardMonth(month, btn) {
+            selectedDashboardMonth = month;
             document.querySelectorAll('.month-select-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            document.getElementById('current-selected-month-label').innerText = m === 'ALL' ? '全部月份' : Number(m) + '月';
-            renderAll();
+            document.getElementById('current-selected-month-label').innerText = month === 'ALL' ? '全部月份' : (parseInt(month) + '月');
+            renderDashboard();
         }
 
-        function filterByDate(dateStr) {
-            if (!dateStr) return false;
+        // Filtering helpers by year & month
+        function matchesYearMonth(dateStr) {
+            if (!dateStr) return true;
             const parts = dateStr.split('-');
             const y = parts[0];
             const m = parts[1];
+            
             if (selectedDashboardYear !== 'ALL' && y !== selectedDashboardYear) return false;
             if (selectedDashboardMonth !== 'ALL' && m !== selectedDashboardMonth) return false;
             return true;
         }
 
+        // Render All Modules
+        function renderAll() {
+            renderDashboard();
+            renderTransitModule();
+            renderFoodModule();
+            renderSportModule();
+            renderLoveModule();
+            renderTripModule();
+            renderDebtModule();
+        }
+
+        // ==================== DASHBOARD RENDER ====================
         function renderDashboard() {
-            // Calculate total expenses across filtered modules
+            // Calculate total expenses matching filter
             let totalExp = 0;
 
-            // Food actual costs (filtered)
-            let filteredFood = appData.foodRecords.filter(r => filterByDate(r.date) && !r.isResetSettlement);
-            let foodSpent = filteredFood.reduce((sum, r) => sum + (r.cost > 0 ? r.cost : 0), 0);
-            let foodCount = filteredFood.length;
-            totalExp += foodSpent;
-            document.getElementById('dash-btn-food').innerText = `$${foodSpent.toFixed(1)} (${foodCount}筆)`;
-
-            // Transit pass or actual pay
-            let filteredTransit = appData.transitRecords.filter(r => filterByDate(r.date));
-            let transitSpent = filteredTransit.reduce((sum, r) => sum + (r.actualPay || 0), 0);
-            totalExp += transitSpent;
-            document.getElementById('dash-btn-transit').innerText = `$${transitSpent.toFixed(1)}`;
-
-            // Sport cost
-            let filteredSport = appData.sportRecords.filter(r => filterByDate(r.date));
-            let sportSpent = filteredSport.reduce((sum, r) => sum + (r.cost || 0), 0);
-            let sportCount = filteredSport.length;
-            totalExp += sportSpent;
-            document.getElementById('dash-btn-sport').innerText = `$${sportSpent.toFixed(1)} (${sportCount}次)`;
-
-            // Love cost
-            let filteredLove = appData.loveRecords.filter(r => filterByDate(r.date));
-            let loveSpent = filteredLove.reduce((sum, r) => sum + (r.money || 0), 0);
-            let loveCount = filteredLove.length;
-            totalExp += loveSpent;
-            document.getElementById('dash-btn-love').innerText = `$${loveSpent.toFixed(1)} (${loveCount}筆)`;
-
+            // Food expenses (positive cost)
+            appData.foodRecords.forEach(r => {
+                if (matchesYearMonth(r.date) && r.cost > 0) totalExp += r.cost;
+            });
+            // Sport expenses
+            appData.sportRecords.forEach(r => {
+                if (matchesYearMonth(r.date) && r.cost) totalExp += r.cost;
+            });
+            // Love expenses
+            appData.loveRecords.forEach(r => {
+                if (matchesYearMonth(r.date) && r.money) totalExp += r.money;
+            });
             // Trip expenses
-            let tripSpent = 0;
             appData.trips.forEach(t => {
                 t.expenses.forEach(e => {
-                    if (filterByDate(e.date)) {
-                        tripSpent += (e.hkdAmount || e.amount || 0);
-                    }
+                    if (matchesYearMonth(e.date) && e.hkdAmount) totalExp += e.hkdAmount;
                 });
             });
-            totalExp += tripSpent;
-            document.getElementById('dash-btn-trip').innerText = `$${tripSpent.toFixed(1)}`;
-
-            // Debt
-            let debtSpent = appData.debtRecords.filter(r => filterByDate(r.date) && r.kind === 'payable').reduce((sum, r) => sum + (r.money || 0), 0);
-            document.getElementById('dash-btn-debt').innerText = `$${debtSpent.toFixed(1)}`;
+            // Transit pass purchase or non-pass expenses
+            appData.transitRecords.forEach(tr => {
+                if (matchesYearMonth(tr.date)) {
+                    if (tr.isPassPurchase && tr.actualPay) totalExp += tr.actualPay;
+                    else if (!tr.isPassPurchase && tr.actualPay) totalExp += tr.actualPay;
+                }
+            });
 
             document.getElementById('home-total-expense').innerText = `$${totalExp.toFixed(1)}`;
+
+            // KPI badges on buttons
+            let filteredFood = appData.foodRecords.filter(r => matchesYearMonth(r.date));
+            let foodCostSum = filteredFood.reduce((acc, r) => acc + (r.cost > 0 ? r.cost : 0), 0);
+            document.getElementById('dash-btn-food').innerText = `$${foodCostSum} (${filteredFood.length}筆)`;
+
+            let filteredTransit = appData.transitRecords.filter(r => matchesYearMonth(r.date));
+            let transitSavedSum = filteredTransit.reduce((acc, r) => acc + (r.saved || 0), 0);
+            document.getElementById('dash-btn-transit').innerText = `慳咗 $${transitSavedSum.toFixed(1)}`;
+
+            let filteredSport = appData.sportRecords.filter(r => matchesYearMonth(r.date));
+            let sportCostSum = filteredSport.reduce((acc, r) => acc + (r.cost || 0), 0);
+            document.getElementById('dash-btn-sport').innerText = `$${sportCostSum} (${filteredSport.length}次)`;
+
+            let filteredLove = appData.loveRecords.filter(r => matchesYearMonth(r.date));
+            let loveSum = filteredLove.reduce((acc, r) => acc + (r.money || 0), 0);
+            document.getElementById('dash-btn-love').innerText = `$${loveSum} (${filteredLove.length}筆)`;
+
+            let tripSum = 0;
+            appData.trips.forEach(t => {
+                t.expenses.forEach(e => {
+                    if (matchesYearMonth(e.date)) tripSum += e.hkdAmount || 0;
+                });
+            });
+            document.getElementById('dash-btn-trip').innerText = `$${tripSum}`;
+
+            let debtSum = 0;
+            appData.debtRecords.forEach(d => {
+                if (matchesYearMonth(d.date) && d.kind === 'receivable') debtSum += d.money;
+            });
+            document.getElementById('dash-btn-debt').innerText = `$${debtSum}`;
         }
 
         // ==================== TRANSIT MODULE ====================
-        function renderTransitView() {
-            const listEl = document.getElementById('transit-records-list');
-            listEl.innerHTML = '';
+        function renderTransitModule() {
             document.getElementById('transit-cycle-id').innerText = `月票期數 #${appData.transitCycleId}`;
-
-            let totalSaved = 0;
-            let passCost = 834;
             
-            // Render records
-            appData.transitRecords.forEach(r => {
+            let totalSaved = 0;
+            let listHtml = '';
+            
+            // Sort by date/id descending
+            let sorted = [...appData.transitRecords].sort((a,b) => b.id - a.id);
+            
+            sorted.forEach(r => {
                 totalSaved += (r.saved || 0);
-                
                 let badgeClass = 'badge-other';
                 if (r.typeCode === 'A') badgeClass = 'badge-kmb';
                 else if (r.typeCode === 'B') badgeClass = 'badge-airport';
                 else if (r.typeCode === 'R') badgeClass = 'badge-reimburse';
 
-                const card = document.createElement('div');
-                card.className = 'record-card';
-                card.innerHTML = `
-                    <div class="record-info">
-                        <div><span class="badge ${badgeClass}">${r.typeLabel}</span> ${r.name || '無名稱'}</div>
-                        <div>📅 ${r.date} | 原價: $${r.rawPrice || 0} | 實付: $${r.actualPay || 0}</div>
-                    </div>
-                    <div class="record-amount">
-                        <div class="record-cost" style="color: var(--success);">慳咗 $${r.saved || 0}</div>
-                        <div style="margin-top: 4px;">
-                            <button class="btn-edit-item" onclick="openEditTransitModal(${r.id})">編輯</button>
-                            <button class="bookmark-del-btn" onclick="deleteTransitRecord(${r.id})">刪除</button>
+                listHtml += `
+                    <div class="record-card">
+                        <div class="record-info">
+                            <div><span class="badge ${badgeClass}">${r.typeLabel || r.typeCode}</span> ${r.name}</div>
+                            <div>📅 ${r.date} | 原價: $${r.rawPrice} | 實付: $${r.actualPay}</div>
+                        </div>
+                        <div class="record-amount">
+                            <div class="record-cost surplus">慳咗 $${(r.saved || 0).toFixed(1)}</div>
+                            <div style="margin-top: 4px;">
+                                <button class="btn-edit-item" onclick="openEditTransitModal(${r.id})">編輯</button>
+                                <button class="bookmark-del-btn" onclick="deleteTransitRecord(${r.id})">刪除</button>
+                            </div>
                         </div>
                     </div>
                 `;
-                listEl.appendChild(card);
             });
 
+            document.getElementById('transit-records-list').innerHTML = listHtml || '<div style="text-align:center; color:#6b7280; padding:20px;">暫無搭車紀錄</div>';
+            
             document.getElementById('kmb-total-saved').innerText = `$${totalSaved.toFixed(1)}`;
-            const netStatus = document.getElementById('kmb-net-status');
-            if (totalSaved >= passCost) {
-                netStatus.innerText = `已回本 (+${(totalSaved - passCost).toFixed(1)})`;
-                netStatus.className = 'kpi-value';
-                netStatus.style.color = 'var(--success)';
+            let net = totalSaved - 834;
+            let netStatusElem = document.getElementById('kmb-net-status');
+            if (net >= 0) {
+                netStatusElem.innerText = `已回本！淨賺 +$${net.toFixed(1)}`;
+                netStatusElem.className = 'kpi-value';
+                netStatusElem.style.color = 'var(--success)';
             } else {
-                netStatus.innerText = `尚未回本 (差 ${(passCost - totalSaved).toFixed(1)})`;
-                netStatus.className = 'kpi-value red';
+                netStatusElem.innerText = `尚未回本 (差 $${Math.abs(net).toFixed(1)})`;
+                netStatusElem.className = 'kpi-value red';
             }
         }
 
@@ -1276,12 +1326,8 @@
             document.getElementById('transit-input-date').value = new Date().toISOString().split('T')[0];
             document.getElementById('transit-input-name').value = '';
             document.getElementById('transit-input-price').value = '';
-            // Populate bookmarks
-            const sel = document.getElementById('transit-select-bookmark');
-            sel.innerHTML = '<option value="">-- 請選擇常用路線 --</option>';
-            appData.transitBookmarks.forEach(b => {
-                sel.innerHTML += `<option value="${b.id}">${b.name} ($${b.rawPrice})</option>`;
-            });
+            document.getElementById('transit-input-type').value = 'A';
+            updateTransitBookmarksSelect();
             document.getElementById('transit-modal').classList.add('active');
         }
 
@@ -1289,9 +1335,19 @@
             document.getElementById('transit-modal').classList.remove('active');
         }
 
+        function updateTransitBookmarksSelect() {
+            let sel = document.getElementById('transit-select-bookmark');
+            let html = '<option value="">-- 請選擇常用路線 --</option>';
+            appData.transitBookmarks.forEach(b => {
+                html += `<option value="${b.id}">${b.name} ($${b.rawPrice})</option>`;
+            });
+            sel.innerHTML = html;
+        }
+
         function fillTransitBookmark() {
-            const id = Number(document.getElementById('transit-select-bookmark').value);
-            const b = appData.transitBookmarks.find(item => item.id === id);
+            let id = document.getElementById('transit-select-bookmark').value;
+            if (!id) return;
+            let b = appData.transitBookmarks.find(x => x.id == id);
             if (b) {
                 document.getElementById('transit-input-name').value = b.name;
                 document.getElementById('transit-input-type').value = b.typeCode;
@@ -1301,24 +1357,24 @@
         }
 
         function onTransitTypeChanged() {
-            const t = document.getElementById('transit-input-type').value;
-            const labelEl = document.getElementById('transit-price-label');
-            if (t === 'R') {
-                labelEl.innerText = '政府補貼報銷金額 ($)';
+            let type = document.getElementById('transit-input-type').value;
+            let label = document.getElementById('transit-price-label');
+            if (type === 'R') {
+                label.innerText = '報銷回贈金額 ($)';
             } else {
-                labelEl.innerText = '原價金額 ($)';
+                label.innerText = '原價金額 ($)';
             }
         }
 
         function saveTransitRecord() {
-            const date = document.getElementById('transit-input-date').value;
-            const typeCode = document.getElementById('transit-input-type').value;
-            const name = document.getElementById('transit-input-name').value || '交通';
-            const rawPrice = parseFloat(document.getElementById('transit-input-price').value) || 0;
+            let date = document.getElementById('transit-input-date').value;
+            let typeCode = document.getElementById('transit-input-type').value;
+            let name = document.getElementById('transit-input-name').value || '交通出行';
+            let rawPrice = parseFloat(document.getElementById('transit-input-price').value) || 0;
 
-            let typeLabel = '九巴';
             let actualPay = 0;
             let saved = 0;
+            let typeLabel = '九巴';
 
             if (typeCode === 'A') {
                 typeLabel = '九巴';
@@ -1326,19 +1382,19 @@
                 saved = rawPrice;
             } else if (typeCode === 'B') {
                 typeLabel = '機場線 (27折)';
-                actualPay = Number((rawPrice * 0.27).toFixed(1));
-                saved = Number((rawPrice - actualPay).toFixed(1));
+                actualPay = parseFloat((rawPrice * 0.27).toFixed(1));
+                saved = parseFloat((rawPrice - actualPay).toFixed(1));
             } else if (typeCode === 'C') {
                 typeLabel = '其他交通';
                 actualPay = rawPrice;
                 saved = 0;
             } else if (typeCode === 'R') {
                 typeLabel = '政府補貼報銷';
-                actualPay = -rawPrice; // negative pay or subsidy
+                actualPay = -rawPrice; // negative pay as rebate
                 saved = rawPrice;
             }
 
-            const newRec = {
+            let newRec = {
                 id: Date.now(),
                 cycleId: appData.transitCycleId,
                 date: date,
@@ -1356,64 +1412,25 @@
         }
 
         function deleteTransitRecord(id) {
-            appData.transitRecords = appData.transitRecords.filter(r => r.id !== id);
-            renderAll();
+            if (confirm('確定刪除此筆交通紀錄？')) {
+                appData.transitRecords = appData.transitRecords.filter(r => r.id !== id);
+                renderAll();
+            }
         }
 
         function deleteLastTransitStep() {
-            if (appData.transitRecords.length > 0) {
-                appData.transitRecords.shift();
-                renderAll();
-            } else {
-                alert('沒有可刪除的記錄！');
+            if (appData.transitRecords.length === 0) {
+                alert('沒有可刪除的記錄');
+                return;
             }
+            // Sort by id descending to get latest
+            let sorted = [...appData.transitRecords].sort((a,b) => b.id - a.id);
+            let latestId = sorted[0].id;
+            deleteTransitRecord(latestId);
         }
 
-        function confirmResetTransitCycle() {
-            if (confirm('確定要開始新一期月票嗎？當前紀錄將存入歷屆月票。')) {
-                // Archive current
-                let totalSaved = appData.transitRecords.reduce((s, r) => s + (r.saved || 0), 0);
-                appData.transitPastCycles.push({
-                    cycleId: appData.transitCycleId,
-                    recordCount: appData.transitRecords.length,
-                    totalSaved: totalSaved
-                });
-                appData.transitCycleId++;
-                appData.transitRecords = [];
-                renderAll();
-            }
-        }
-
-        function openTransitHistoryModal() {
-            const listEl = document.getElementById('transit-history-list');
-            listEl.innerHTML = '';
-            if (appData.transitPastCycles.length === 0) {
-                listEl.innerHTML = '<div style="text-align: center; color: #6b7280; padding: 20px;">暫無歷屆月票紀錄</div>';
-            } else {
-                appData.transitPastCycles.forEach(c => {
-                    listEl.innerHTML += `
-                        <div class="history-card">
-                            <div class="history-header">
-                                <span>月票期數 #${c.cycleId}</span>
-                                <span style="color: var(--success);">總共慳咗: $${c.totalSaved || 0}</span>
-                            </div>
-                            <div class="history-summary">
-                                <div>記錄筆數: ${c.recordCount} 筆</div>
-                            </div>
-                        </div>
-                    `;
-                });
-            }
-            document.getElementById('transit-history-modal').classList.add('active');
-        }
-
-        function closeTransitHistoryModal() {
-            document.getElementById('transit-history-modal').classList.remove('active');
-        }
-
-        // Edit Transit
         function openEditTransitModal(id) {
-            const r = appData.transitRecords.find(item => item.id === id);
+            let r = appData.transitRecords.find(x => x.id === id);
             if (!r) return;
             document.getElementById('edit-transit-id').value = r.id;
             document.getElementById('edit-transit-date').value = r.date;
@@ -1428,9 +1445,10 @@
         }
 
         function updateTransitRecord() {
-            const id = Number(document.getElementById('edit-transit-id').value);
-            const r = appData.transitRecords.find(item => item.id === id);
+            let id = parseInt(document.getElementById('edit-transit-id').value);
+            let r = appData.transitRecords.find(x => x.id === id);
             if (!r) return;
+
             r.date = document.getElementById('edit-transit-date').value;
             r.typeCode = document.getElementById('edit-transit-type').value;
             r.name = document.getElementById('edit-transit-name').value;
@@ -1442,8 +1460,8 @@
                 r.saved = r.rawPrice;
             } else if (r.typeCode === 'B') {
                 r.typeLabel = '機場線 (27折)';
-                r.actualPay = Number((r.rawPrice * 0.27).toFixed(1));
-                r.saved = Number((r.rawPrice - r.actualPay).toFixed(1));
+                r.actualPay = parseFloat((r.rawPrice * 0.27).toFixed(1));
+                r.saved = parseFloat((r.rawPrice - r.actualPay).toFixed(1));
             } else if (r.typeCode === 'C') {
                 r.typeLabel = '其他交通';
                 r.actualPay = r.rawPrice;
@@ -1458,95 +1476,161 @@
             renderAll();
         }
 
-        // Transit Bookmark management
+        function confirmResetTransitCycle() {
+            if (confirm('確定開啟新一期月票？本期記錄將會存入歷屆月票中。')) {
+                let totalSaved = appData.transitRecords.reduce((acc, r) => acc + (r.saved || 0), 0);
+                let pastCycle = {
+                    cycleId: appData.transitCycleId,
+                    startDate: appData.transitRecords.length > 0 ? appData.transitRecords[appData.transitRecords.length-1].date : '-',
+                    endDate: appData.transitRecords.length > 0 ? appData.transitRecords[0].date : '-',
+                    totalSaved: totalSaved,
+                    recordCount: appData.transitRecords.length,
+                    records: [...appData.transitRecords]
+                };
+                appData.transitPastCycles.push(pastCycle);
+                appData.transitCycleId += 1;
+                appData.transitRecords = [];
+                renderAll();
+            }
+        }
+
+        function openTransitHistoryModal() {
+            let html = '';
+            if (appData.transitPastCycles.length === 0) {
+                html = '<div style="text-align:center; color:#6b7280; padding:20px;">暫無歷屆月票記錄</div>';
+            } else {
+                appData.transitPastCycles.forEach(c => {
+                    html += `
+                        <div class="history-card">
+                            <div class="history-header">
+                                <span>月票期數 #${c.cycleId}</span>
+                                <span style="color: var(--success);">共慳咗 $${(c.totalSaved || 0).toFixed(1)}</span>
+                            </div>
+                            <div class="history-summary">
+                                <div>📅 期間: ${c.startDate} ~ ${c.endDate}</div>
+                                <div>📝 記錄筆數: ${c.recordCount}筆</div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            document.getElementById('transit-history-list').innerHTML = html;
+            document.getElementById('transit-history-modal').classList.add('active');
+        }
+
+        function closeTransitHistoryModal() {
+            document.getElementById('transit-history-modal').classList.remove('active');
+        }
+
+        // Transit Bookmark Modal
         function openTransitBookmarkModal() {
-            renderTransitBookmarksList();
+            renderTransitBookmarkList();
             document.getElementById('transit-bookmark-modal').classList.add('active');
         }
+
         function closeTransitBookmarkModal() {
             document.getElementById('transit-bookmark-modal').classList.remove('active');
+            updateTransitBookmarksSelect();
         }
-        function renderTransitBookmarksList() {
-            const listEl = document.getElementById('transit-bookmark-list');
-            listEl.innerHTML = '';
+
+        function renderTransitBookmarkList() {
+            let html = '';
             appData.transitBookmarks.forEach(b => {
-                listEl.innerHTML += `
+                html += `
                     <div class="bookmark-item">
-                        <div><b>${b.name}</b> ($${b.rawPrice})</div>
+                        <div><strong>${b.name}</strong> (${b.typeCode}) - $${b.rawPrice}</div>
                         <button class="bookmark-del-btn" onclick="deleteTransitBookmark(${b.id})">刪除</button>
                     </div>
                 `;
             });
+            document.getElementById('transit-bookmark-list').innerHTML = html || '<div style="font-size:0.8rem; color:#6b7280; text-align:center;">暫無常用路線</div>';
         }
+
         function saveNewTransitBookmark() {
-            const name = document.getElementById('tb-name').value;
-            const typeCode = document.getElementById('tb-typeCode').value;
-            const rawPrice = parseFloat(document.getElementById('tb-rawPrice').value) || 0;
+            let name = document.getElementById('tb-name').value;
+            let typeCode = document.getElementById('tb-typeCode').value;
+            let rawPrice = parseFloat(document.getElementById('tb-rawPrice').value) || 0;
             if (!name) {
                 alert('請輸入路線名稱');
                 return;
             }
-            appData.transitBookmarks.push({ id: Date.now(), name, typeCode, rawPrice });
+            appData.transitBookmarks.push({
+                id: Date.now(),
+                name: name,
+                typeCode: typeCode,
+                rawPrice: rawPrice
+            });
             document.getElementById('tb-name').value = '';
             document.getElementById('tb-rawPrice').value = '';
-            renderTransitBookmarksList();
+            renderTransitBookmarkList();
         }
+
         function deleteTransitBookmark(id) {
             appData.transitBookmarks = appData.transitBookmarks.filter(b => b.id !== id);
-            renderTransitBookmarksList();
+            renderTransitBookmarkList();
         }
 
 
         // ==================== FOOD MODULE ====================
-        function renderFoodView() {
-            const listEl = document.getElementById('food-records-list');
-            listEl.innerHTML = '';
+        function renderFoodModule() {
             document.getElementById('food-cycle-id').innerText = `週期 #${appData.foodCycleId}`;
-
+            
             let totalBalance = 0;
-            appData.foodRecords.forEach(r => {
+            let listHtml = '';
+            
+            let sorted = [...appData.foodRecords].sort((a,b) => b.id - a.id);
+            
+            sorted.forEach(r => {
                 totalBalance += (r.diff || 0);
-
-                let badgeHtml = '';
+                
+                let badgeClass = 'badge-simple';
+                let tierText = '';
                 if (r.isResetSettlement) {
-                    badgeHtml = `<span class="badge badge-luxury">歸零結算</span>`;
+                    badgeClass = 'badge-luxury';
+                    tierText = '豪華大餐歸零';
                 } else if (r.cost < 50) {
-                    badgeHtml = `<span class="badge badge-tier-green">抵食夾大件 (<$50)</span>`;
+                    badgeClass = 'badge-tier-green';
+                    tierText = '抵食夾大件 (<$50)';
                 } else if (r.cost <= 100) {
-                    badgeHtml = `<span class="badge badge-tier-blue">正常發揮 ($50-$100)</span>`;
+                    badgeClass = 'badge-tier-blue';
+                    tierText = '正常發揮 ($50-$100)';
                 } else {
-                    badgeHtml = `<span class="badge badge-tier-red">食豪啲 (> $100)</span>`;
+                    badgeClass = 'badge-tier-red';
+                    tierText = '食豪啲獎勵自己 (>$100)';
                 }
 
-                const card = document.createElement('div');
-                card.className = 'record-card';
-                card.innerHTML = `
-                    <div class="record-info">
-                        <div>${badgeHtml} ${r.name || r.type}</div>
-                        <div>📅 ${r.date} | 預算: $${r.budget || 100} | 實付: $${r.cost}</div>
-                    </div>
-                    <div class="record-amount">
-                        <div class="record-diff ${r.diff >= 0 ? 'surplus' : 'deficit'}">${r.diff >= 0 ? '+' : ''}$${r.diff}</div>
-                        <div style="margin-top: 4px;">
-                            ${!r.isResetSettlement ? `<button class="btn-edit-item" onclick="openEditFoodModal(${r.id})">編輯</button>` : ''}
-                            <button class="bookmark-del-btn" onclick="deleteFoodRecord(${r.id})">刪除</button>
+                let diffStr = (r.diff >= 0 ? `+$${r.diff}` : `-$${Math.abs(r.diff)}`);
+                let diffClass = r.diff >= 0 ? 'surplus' : 'deficit';
+
+                listHtml += `
+                    <div class="record-card">
+                        <div class="record-info">
+                            <div><span class="badge ${badgeClass}">${r.type}</span> ${r.name}</div>
+                            <div>📅 ${r.date} | 預算: $${r.budget} | 實付: $${r.cost} | ${tierText}</div>
+                        </div>
+                        <div class="record-amount">
+                            <div class="record-cost ${diffClass}">結餘變動 ${diffStr}</div>
+                            <div style="margin-top: 4px;">
+                                <button class="btn-edit-item" onclick="openEditFoodModal(${r.id})">編輯</button>
+                                <button class="bookmark-del-btn" onclick="deleteFoodRecord(${r.id})">刪除</button>
+                            </div>
                         </div>
                     </div>
                 `;
-                listEl.appendChild(card);
             });
 
-            const balEl = document.getElementById('total-balance');
-            balEl.innerText = `${totalBalance >= 0 ? '+' : ''}$${totalBalance.toFixed(1)}`;
-            balEl.className = `kpi-value ${totalBalance >= 0 ? '' : 'red'}`;
+            document.getElementById('food-records-list').innerHTML = listHtml || '<div style="text-align:center; color:#6b7280; padding:20px;">暫無餐食紀錄</div>';
+            
+            let balElem = document.getElementById('total-balance');
+            balElem.innerText = (totalBalance >= 0 ? `+$${totalBalance.toFixed(1)}` : `-$${Math.abs(totalBalance).toFixed(1)}`);
+            balElem.className = totalBalance >= 0 ? 'kpi-value surplus' : 'kpi-value deficit';
         }
 
         function openFoodModal() {
             document.getElementById('food-input-date').value = new Date().toISOString().split('T')[0];
             document.getElementById('food-input-name').value = '';
             document.getElementById('food-input-cost').value = '';
-            document.getElementById('preview-cost').innerText = '$0.0';
-            document.getElementById('preview-diff').innerText = '+$100.0';
+            previewFoodDiff();
             document.getElementById('food-modal').classList.add('active');
         }
 
@@ -1555,26 +1639,29 @@
         }
 
         function previewFoodDiff() {
-            const cost = parseFloat(document.getElementById('food-input-cost').value) || 0;
-            const diff = 100 - cost;
+            let cost = parseFloat(document.getElementById('food-input-cost').value) || 0;
+            let budget = 100;
+            let diff = budget - cost;
             document.getElementById('preview-cost').innerText = `$${cost.toFixed(1)}`;
-            const diffEl = document.getElementById('preview-diff');
-            diffEl.innerText = `${diff >= 0 ? '+' : ''}$${diff.toFixed(1)}`;
-            diffEl.style.color = diff >= 0 ? 'var(--success)' : 'var(--danger)';
+            let diffElem = document.getElementById('preview-diff');
+            diffElem.innerText = (diff >= 0 ? `+$${diff.toFixed(1)}` : `-$${Math.abs(diff).toFixed(1)}`);
+            diffElem.style.color = diff >= 0 ? 'var(--success)' : 'var(--danger)';
         }
 
         function saveFoodRecord() {
-            const date = document.getElementById('food-input-date').value;
-            const name = document.getElementById('food-input-name').value || '簡樸餐';
-            const cost = parseFloat(document.getElementById('food-input-cost').value) || 0;
-            const budget = 100;
-            const diff = budget - cost;
+            let date = document.getElementById('food-input-date').value;
+            let name = document.getElementById('food-input-name').value || '日常餐食';
+            let cost = parseFloat(document.getElementById('food-input-cost').value) || 0;
+            let budget = 100;
+            let diff = budget - cost;
 
-            const newRec = {
+            let type = cost > 100 ? '豪華大餐' : '簡樸餐';
+
+            let newRec = {
                 id: Date.now(),
                 cycleId: appData.foodCycleId,
                 date: date,
-                type: '簡樸餐',
+                type: type,
                 name: name,
                 cost: cost,
                 budget: budget,
@@ -1587,89 +1674,28 @@
         }
 
         function deleteFoodRecord(id) {
-            appData.foodRecords = appData.foodRecords.filter(r => r.id !== id);
-            renderAll();
+            if (confirm('確定刪除此筆餐食紀錄？')) {
+                appData.foodRecords = appData.foodRecords.filter(r => r.id !== id);
+                renderAll();
+            }
         }
 
         function deleteLastFoodStep() {
-            if (appData.foodRecords.length > 0) {
-                appData.foodRecords.shift();
-                renderAll();
-            } else {
-                alert('沒有可刪除的記錄！');
+            if (appData.foodRecords.length === 0) {
+                alert('沒有可刪除的記錄');
+                return;
             }
+            let sorted = [...appData.foodRecords].sort((a,b) => b.id - a.id);
+            let latestId = sorted[0].id;
+            deleteFoodRecord(latestId);
         }
 
-        function confirmResetFoodCycle() {
-            if (confirm('確定要重置食幾多慳幾多週期嗎？')) {
-                let totalBal = appData.foodRecords.reduce((s, r) => s + (r.diff || 0), 0);
-                appData.foodHistory.push({
-                    cycleId: appData.foodCycleId,
-                    recordCount: appData.foodRecords.length,
-                    totalBalance: totalBal
-                });
-                appData.foodCycleId++;
-                appData.foodRecords = [];
-                renderAll();
-            }
-        }
-
-        function openFoodHistoryModal() {
-            const listEl = document.getElementById('food-history-list');
-            listEl.innerHTML = '';
-            
-            // Fix: ensure foodHistory exists or fallback to foodPastCycles
-            if (!appData.foodHistory) {
-                appData.foodHistory = appData.foodPastCycles || [];
-            }
-
-            if (appData.foodHistory.length === 0) {
-                listEl.innerHTML = '<div style="text-align: center; color: #6b7280; padding: 20px;">暫無歷屆週期紀錄</div>';
-            } else {
-                appData.foodHistory.forEach((c, index) => {
-                    listEl.innerHTML += `
-                        <div class="history-card">
-                            <div class="history-header">
-                                <span>週期 #${c.cycleId || (index + 1)}</span>
-                                <span style="color: var(--success);">結餘: $${c.totalBalance || 0}</span>
-                            </div>
-                            <div class="history-summary">
-                                <div>記錄筆數: ${c.recordCount || 0} 筆</div>
-                                <div style="text-align: right;">
-                                    <button class="bookmark-del-btn" onclick="deleteFoodHistoryItem(${index})">刪除此歷史</button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                });
-            }
-            document.getElementById('food-history-modal').classList.add('active');
-        }
-
-        function closeFoodHistoryModal() {
-            document.getElementById('food-history-modal').classList.remove('active');
-        }
-
-        // Fix for food history deletion (Debugging the deletion issue in history records)
-        function deleteFoodHistoryItem(index) {
-            if (confirm('確定要刪除這筆歷史記錄嗎？')) {
-                if (!appData.foodHistory) {
-                    appData.foodHistory = appData.foodPastCycles || [];
-                }
-                appData.foodHistory.splice(index, 1);
-                appData.foodPastCycles = appData.foodHistory;
-                openFoodHistoryModal(); // Refresh modal view
-                renderAll();
-            }
-        }
-
-        // Edit Food Record
         function openEditFoodModal(id) {
-            const r = appData.foodRecords.find(item => item.id === id);
+            let r = appData.foodRecords.find(x => x.id === id);
             if (!r) return;
             document.getElementById('edit-food-id').value = r.id;
             document.getElementById('edit-food-date').value = r.date;
-            document.getElementById('edit-food-name').value = r.name || r.type;
+            document.getElementById('edit-food-name').value = r.name;
             document.getElementById('edit-food-cost').value = r.cost;
             document.getElementById('edit-food-modal').classList.add('active');
         }
@@ -1679,102 +1705,239 @@
         }
 
         function updateFoodRecord() {
-            const id = Number(document.getElementById('edit-food-id').value);
-            const r = appData.foodRecords.find(item => item.id === id);
+            let id = parseInt(document.getElementById('edit-food-id').value);
+            let r = appData.foodRecords.find(x => x.id === id);
             if (!r) return;
+
             r.date = document.getElementById('edit-food-date').value;
             r.name = document.getElementById('edit-food-name').value;
             r.cost = parseFloat(document.getElementById('edit-food-cost').value) || 0;
-            r.budget = 100;
+            r.budget = r.isResetSettlement ? 0 : 100;
             r.diff = r.budget - r.cost;
+            r.type = r.cost > 100 ? '豪華大餐' : '簡樸餐';
+
             closeEditFoodModal();
             renderAll();
         }
 
+        // FOOD CYCLE RESET: select a record as cycle end boundary
+        function confirmResetFoodCycle() {
+            if (appData.foodRecords.length === 0) {
+                alert('當前週期沒有任何記錄可供重置');
+                return;
+            }
+            // Open modal to select which record is the last one of the cycle
+            let sorted = [...appData.foodRecords].sort((a,b) => b.id - a.id);
+            let html = '';
+            sorted.forEach(r => {
+                html += `
+                    <div class="bookmark-item" style="cursor:pointer; padding: 10px;" onclick="executeFoodCycleReset(${r.id})">
+                        <div>
+                            <strong>📅 ${r.date}</strong> - ${r.name} ($${r.cost})
+                        </div>
+                        <button class="btn-sm-action" style="background: var(--primary); color: white;">以此作為最後一筆</button>
+                    </div>
+                `;
+            });
+            document.getElementById('food-reset-candidates-list').innerHTML = html;
+            document.getElementById('food-reset-select-modal').classList.add('active');
+        }
+
+        function closeFoodResetSelectModal() {
+            document.getElementById('food-reset-select-modal').classList.remove('active');
+        }
+
+        function executeFoodCycleReset(boundaryRecordId) {
+            closeFoodResetSelectModal();
+            
+            // Sort records descending by id/date
+            let sorted = [...appData.foodRecords].sort((a,b) => b.id - a.id);
+            
+            // Find index of boundary record
+            let boundIndex = sorted.findIndex(r => r.id === boundaryRecordId);
+            if (boundIndex === -1) return;
+
+            // Records from 0 up to boundIndex belong to the current cycle being closed
+            let currentCycleRecords = sorted.slice(0, boundIndex + 1);
+            let remainingRecords = sorted.slice(boundIndex + 1);
+
+            let totalBalance = currentCycleRecords.reduce((acc, r) => acc + (r.diff || 0), 0);
+            let startDate = currentCycleRecords[currentCycleRecords.length - 1].date;
+            let endDate = currentCycleRecords[0].date;
+
+            let pastCycle = {
+                cycleId: appData.foodCycleId,
+                startDate: startDate,
+                endDate: endDate,
+                totalBalance: totalBalance,
+                recordCount: currentCycleRecords.length,
+                records: currentCycleRecords
+            };
+
+            if (!appData.foodPastCycles) appData.foodPastCycles = [];
+            appData.foodPastCycles.push(pastCycle);
+
+            appData.foodCycleId += 1;
+            appData.foodRecords = remainingRecords;
+            
+            alert(`週期 #${pastCycle.cycleId} 重置成功！已歸納 ${currentCycleRecords.length} 筆記錄到歷史紀錄。`);
+            renderAll();
+        }
+
+        function openFoodHistoryModal() {
+            let html = '';
+            if (!appData.foodPastCycles || appData.foodPastCycles.length === 0) {
+                html = '<div style="text-align:center; color:#6b7280; padding:20px;">暫無歷屆食幾多慳幾多紀錄</div>';
+            } else {
+                appData.foodPastCycles.forEach((c, index) => {
+                    html += `
+                        <div class="history-card">
+                            <div class="history-header">
+                                <span>週期 #${c.cycleId || (index + 1)}</span>
+                                <span style="color: var(--primary);">結餘: $${c.totalBalance || 0}</span>
+                            </div>
+                            <div class="history-summary" style="margin-bottom: 8px;">
+                                <div>📅 期間: ${c.startDate || '-'} ~ ${c.endDate || '-'}</div>
+                                <div>📝 記錄筆數: ${c.recordCount || (c.records ? c.records.length : 0)}筆</div>
+                            </div>
+                            <button class="btn-sm-action" style="width: 100%; background: var(--primary); color: white; text-align: center;" onclick="retrieveFoodHistoryCycle(${index})">📂 Retrieve 週期 Record 明細</button>
+                        </div>
+                    `;
+                });
+            }
+            document.getElementById('food-history-list').innerHTML = html;
+            document.getElementById('food-history-modal').classList.add('active');
+        }
+
+        function closeFoodHistoryModal() {
+            document.getElementById('food-history-modal').classList.remove('active');
+        }
+
+        // RETRIEVE Food History Cycle Records
+        function retrieveFoodHistoryCycle(cycleIndex) {
+            let c = appData.foodPastCycles[cycleIndex];
+            if (!c) return;
+
+            document.getElementById('food-history-detail-title').innerText = `📂 週期 #${c.cycleId || (cycleIndex + 1)} 明細紀錄`;
+            document.getElementById('food-history-detail-summary').innerHTML = `
+                <div>📅 期間：${c.startDate || '-'} ~ ${c.endDate || '-'}</div>
+                <div>💰 總結餘：$${c.totalBalance || 0}</div>
+            `;
+
+            let recs = c.records || [];
+            let listHtml = '';
+            if (recs.length === 0) {
+                listHtml = '<div style="text-align:center; color:#6b7280; padding:10px;">此歷史週期未存有明細記錄</div>';
+            } else {
+                recs.forEach(r => {
+                    let diffStr = (r.diff >= 0 ? `+$${r.diff}` : `-$${Math.abs(r.diff)}`);
+                    let diffClass = r.diff >= 0 ? 'surplus' : 'deficit';
+                    listHtml += `
+                        <div class="record-card" style="padding: 10px; margin-bottom: 6px;">
+                            <div class="record-info">
+                                <div style="font-size:0.85rem;"><span class="badge badge-simple">${r.type}</span> ${r.name}</div>
+                                <div style="font-size:0.75rem;">📅 ${r.date} | 預算: $${r.budget} | 實付: $${r.cost}</div>
+                            </div>
+                            <div class="record-amount">
+                                <div class="record-cost ${diffClass}" style="font-size:0.85rem;">${diffStr}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            document.getElementById('food-history-detail-records').innerHTML = listHtml;
+            document.getElementById('food-history-detail-modal').classList.add('active');
+        }
+
+        function closeFoodHistoryDetailModal() {
+            document.getElementById('food-history-detail-modal').classList.remove('active');
+        }
+
 
         // ==================== SPORT MODULE ====================
-        function renderSportView() {
-            const listEl = document.getElementById('sport-records-list');
-            listEl.innerHTML = '';
-            appData.sportRecords.forEach(r => {
-                const card = document.createElement('div');
-                card.className = 'record-card';
-                card.innerHTML = `
-                    <div class="record-info">
-                        <div><span class="badge badge-sport">${r.type}</span> 運動洗費</div>
-                        <div>📅 ${r.date}</div>
-                    </div>
-                    <div class="record-amount">
-                        <div class="record-cost">$${r.cost || 0}</div>
-                        <div style="margin-top: 4px;">
+        function renderSportModule() {
+            document.getElementById('sport-cal-title').innerText = `${sportCurrentYear}年${sportCurrentMonth}月`;
+            renderSportCalendar();
+            
+            let listHtml = '';
+            let sorted = [...appData.sportRecords].sort((a,b) => b.id - a.id);
+            sorted.forEach(r => {
+                listHtml += `
+                    <div class="record-card">
+                        <div class="record-info">
+                            <div><span class="badge badge-sport">${r.type}</span> 運動記錄</div>
+                            <div>📅 ${r.date} | 洗費: $${r.cost || 0}</div>
+                        </div>
+                        <div class="record-amount">
                             <button class="bookmark-del-btn" onclick="deleteSportRecord(${r.id})">刪除</button>
                         </div>
                     </div>
                 `;
-                listEl.appendChild(card);
             });
-
-            renderSportCalendar();
+            document.getElementById('sport-records-list').innerHTML = listHtml || '<div style="text-align:center; color:#6b7280; padding:20px;">暫無運動紀錄</div>';
         }
 
-        function changeSportMonth(dir) {
-            sportCurrentMonth += dir;
+        function changeSportMonth(direction) {
+            sportCurrentMonth += direction;
             if (sportCurrentMonth > 12) {
                 sportCurrentMonth = 1;
-                sportCurrentYear++;
+                sportCurrentYear += 1;
             } else if (sportCurrentMonth < 1) {
                 sportCurrentMonth = 12;
-                sportCurrentYear--;
+                sportCurrentYear -= 1;
             }
-            renderSportCalendar();
+            renderSportModule();
         }
 
         function renderSportCalendar() {
-            document.getElementById('sport-cal-title').innerText = `${sportCurrentYear}年${sportCurrentMonth}月`;
-            const daysEl = document.getElementById('sport-calendar-days');
-            daysEl.innerHTML = '';
+            let grid = document.getElementById('sport-calendar-days');
+            let html = '';
 
-            const firstDay = new Date(sportCurrentYear, sportCurrentMonth - 1, 1).getDay();
-            const totalDays = new Date(sportCurrentYear, sportCurrentMonth, 0).getDate();
+            let firstDay = new Date(sportCurrentYear, sportCurrentMonth - 1, 1).getDay();
+            let daysInMonth = new Date(sportCurrentYear, sportCurrentMonth, 0).getDate();
 
-            // Blank days
+            // Previous month padding
             for (let i = 0; i < firstDay; i++) {
-                const dayBox = document.createElement('div');
-                dayBox.className = 'cal-day other-month';
-                daysEl.appendChild(dayBox);
+                html += `<div class="cal-day other-month"></div>`;
             }
 
-            for (let d = 1; d <= totalDays; d++) {
-                const mStr = String(sportCurrentMonth).padStart(2, '0');
-                const dStr = String(d).padStart(2, '0');
-                const dateKey = `${sportCurrentYear}-${mStr}-${dStr}`;
+            // Current month days
+            for (let d = 1; d <= daysInMonth; d++) {
+                let mStr = String(sportCurrentMonth).padStart(2, '0');
+                let dStr = String(d).padStart(2, '0');
+                let dateStr = `${sportCurrentYear}-${mStr}-${dStr}`;
 
-                const dayBox = document.createElement('div');
-                dayBox.className = 'cal-day';
-                
-                let badgesHtml = `<div class="cal-day-num">${d}</div>`;
-                const matched = appData.sportRecords.filter(r => r.date === dateKey);
-                matched.forEach(item => {
-                    badgesHtml += `<span class="cal-badge">${item.type}</span>`;
+                let dayRecords = appData.sportRecords.filter(r => r.date === dateStr);
+                let badgeHtml = '';
+                dayRecords.forEach(r => {
+                    badgeHtml += `<span class="cal-badge">${r.type}</span>`;
                 });
 
-                dayBox.innerHTML = badgesHtml;
-                daysEl.appendChild(dayBox);
+                html += `
+                    <div class="cal-day">
+                        <div class="cal-day-num">${d}</div>
+                        ${badgeHtml}
+                    </div>
+                `;
             }
+
+            grid.innerHTML = html;
         }
 
         function openSportModal() {
             document.getElementById('sport-input-date').value = new Date().toISOString().split('T')[0];
             document.getElementById('sport-input-type').value = '';
-            document.getElementById('sport-input-cost').value = '';
+            document.getElementById('sport-input-cost').value = '65';
             
-            // Recent sport types
-            const sel = document.getElementById('sport-select-recent');
-            sel.innerHTML = '<option value="">-- 選擇最近運動類型 --</option>';
-            const uniqueTypes = [...new Set(appData.sportRecords.map(r => r.type))];
-            uniqueTypes.forEach(t => {
-                sel.innerHTML += `<option value="${t}">${t}</option>`;
+            // Populate recent sport types
+            let sel = document.getElementById('sport-select-recent');
+            let types = [...new Set(appData.sportRecords.map(r => r.type))];
+            let html = '<option value="">-- 選擇最近運動類型 --</option>';
+            types.forEach(t => {
+                html += `<option value="${t}">${t}</option>`;
             });
+            sel.innerHTML = html;
 
             document.getElementById('sport-modal').classList.add('active');
         }
@@ -1784,16 +1947,21 @@
         }
 
         function fillSportType() {
-            const val = document.getElementById('sport-select-recent').value;
+            let val = document.getElementById('sport-select-recent').value;
             if (val) {
                 document.getElementById('sport-input-type').value = val;
             }
         }
 
         function saveSportRecord() {
-            const date = document.getElementById('sport-input-date').value;
-            const type = document.getElementById('sport-input-type').value || '綜合運動';
-            const cost = parseFloat(document.getElementById('sport-input-cost').value) || 0;
+            let date = document.getElementById('sport-input-date').value;
+            let type = document.getElementById('sport-input-type').value;
+            let cost = parseFloat(document.getElementById('sport-input-cost').value) || 0;
+
+            if (!type) {
+                alert('請輸入運動類型');
+                return;
+            }
 
             appData.sportRecords.unshift({
                 id: Date.now(),
@@ -1807,32 +1975,34 @@
         }
 
         function deleteSportRecord(id) {
-            appData.sportRecords = appData.sportRecords.filter(r => r.id !== id);
-            renderAll();
+            if (confirm('確定刪除此運動記錄？')) {
+                appData.sportRecords = appData.sportRecords.filter(r => r.id !== id);
+                renderAll();
+            }
         }
 
 
         // ==================== LOVE MODULE ====================
-        function renderLoveView() {
-            const listEl = document.getElementById('love-records-list');
-            listEl.innerHTML = '';
-            appData.loveRecords.forEach(r => {
-                const card = document.createElement('div');
-                card.className = 'record-card';
-                card.innerHTML = `
-                    <div class="record-info">
-                        <div><span class="badge badge-love">${r.type}</span> ${r.name || ''}</div>
-                        <div>📅 ${r.date}</div>
-                    </div>
-                    <div class="record-amount">
-                        <div class="record-cost">$${r.money || 0}</div>
-                        <div style="margin-top: 4px;">
-                            <button class="bookmark-del-btn" onclick="deleteLoveRecord(${r.id})">刪除</button>
+        function renderLoveModule() {
+            let listHtml = '';
+            let sorted = [...appData.loveRecords].sort((a,b) => b.id - a.id);
+            sorted.forEach(r => {
+                listHtml += `
+                    <div class="record-card">
+                        <div class="record-info">
+                            <div><span class="badge badge-love">${r.type}</span> ${r.name || r.type}</div>
+                            <div>📅 ${r.date}</div>
+                        </div>
+                        <div class="record-amount">
+                            <div class="record-cost" style="color: var(--love-purple);">-$${r.money}</div>
+                            <div style="margin-top: 4px;">
+                                <button class="bookmark-del-btn" onclick="deleteLoveRecord(${r.id})">刪除</button>
+                            </div>
                         </div>
                     </div>
                 `;
-                listEl.appendChild(card);
             });
+            document.getElementById('love-records-list').innerHTML = listHtml || '<div style="text-align:center; color:#6b7280; padding:20px;">暫無心頭好紀錄</div>';
         }
 
         function openLoveModal() {
@@ -1841,11 +2011,12 @@
             document.getElementById('love-input-name').value = '';
             document.getElementById('love-input-money').value = '';
 
-            const sel = document.getElementById('love-select-category');
-            sel.innerHTML = '<option value="">-- 選擇現有類別 --</option>';
-            appData.loveCategories.forEach(cat => {
-                sel.innerHTML += `<option value="${cat}">${cat}</option>`;
+            let sel = document.getElementById('love-select-category');
+            let html = '<option value="">-- 選擇現有類別 --</option>';
+            appData.loveCategories.forEach(c => {
+                html += `<option value="${c}">${c}</option>`;
             });
+            sel.innerHTML = html;
 
             document.getElementById('love-modal').classList.add('active');
         }
@@ -1855,23 +2026,33 @@
         }
 
         function fillLoveCategory() {
-            const val = document.getElementById('love-select-category').value;
+            let val = document.getElementById('love-select-category').value;
             if (val) {
                 document.getElementById('love-input-type').value = val;
             }
         }
 
         function saveLoveRecord() {
-            const date = document.getElementById('love-input-date').value;
-            const type = document.getElementById('love-input-type').value || '心頭好';
-            const name = document.getElementById('love-input-name').value;
-            const money = parseFloat(document.getElementById('love-input-money').value) || 0;
+            let date = document.getElementById('love-input-date').value;
+            let type = document.getElementById('love-input-type').value;
+            let name = document.getElementById('love-input-name').value;
+            let money = parseFloat(document.getElementById('love-input-money').value) || 0;
+
+            if (!type) {
+                alert('請輸入消費類別');
+                return;
+            }
+
+            // Ensure category exists in list
+            if (!appData.loveCategories.includes(type)) {
+                appData.loveCategories.push(type);
+            }
 
             appData.loveRecords.unshift({
                 id: Date.now(),
                 date: date,
                 type: type,
-                name: name,
+                name: name || type,
                 money: money
             });
 
@@ -1880,93 +2061,93 @@
         }
 
         function deleteLoveRecord(id) {
-            appData.loveRecords = appData.loveRecords.filter(r => r.id !== id);
-            renderAll();
+            if (confirm('確定刪除此心頭好記錄？')) {
+                appData.loveRecords = appData.loveRecords.filter(r => r.id !== id);
+                renderAll();
+            }
         }
 
+        // Love Categories Manage
         function openCreateLoveCategoryModal() {
             renderLoveCategoryManageList();
             document.getElementById('create-love-category-modal').classList.add('active');
         }
+
         function closeCreateLoveCategoryModal() {
             document.getElementById('create-love-category-modal').classList.remove('active');
+            openLoveModal();
         }
+
         function renderLoveCategoryManageList() {
-            const listEl = document.getElementById('love-category-manage-list');
-            listEl.innerHTML = '';
-            appData.loveCategories.forEach(cat => {
-                listEl.innerHTML += `
+            let html = '';
+            appData.loveCategories.forEach(c => {
+                html += `
                     <div class="bookmark-item">
-                        <div><b>${cat}</b></div>
-                        <button class="bookmark-del-btn" onclick="deleteLoveCategory('${cat}')">刪除</button>
+                        <div><strong>${c}</strong></div>
+                        <button class="bookmark-del-btn" onclick="deleteLoveCategory('${c}')">刪除</button>
                     </div>
                 `;
             });
+            document.getElementById('love-category-manage-list').innerHTML = html || '<div style="font-size:0.8rem; color:#6b7280; text-align:center;">暫無類別</div>';
         }
+
         function saveNewLoveCategory() {
-            const name = document.getElementById('lc-input-name').value;
+            let name = document.getElementById('lc-input-name').value;
             if (!name) return;
             if (!appData.loveCategories.includes(name)) {
                 appData.loveCategories.push(name);
             }
             document.getElementById('lc-input-name').value = '';
             renderLoveCategoryManageList();
-            openLoveModal(); // refresh
         }
-        function deleteLoveCategory(cat) {
-            appData.loveCategories = appData.loveCategories.filter(c => c !== cat);
+
+        function deleteLoveCategory(name) {
+            appData.loveCategories = appData.loveCategories.filter(c => c !== name);
             renderLoveCategoryManageList();
         }
 
 
         // ==================== TRIP MODULE ====================
-        function renderTripView() {
-            const container = document.getElementById('trip-list-container');
-            container.innerHTML = '';
-            if (appData.trips.length === 0) {
-                container.innerHTML = '<div style="text-align: center; color: #6b7280; padding: 20px;">暫無旅程紀錄</div>';
-                return;
-            }
-
-            appData.trips.forEach(trip => {
+        function renderTripModule() {
+            let html = '';
+            appData.trips.forEach(t => {
                 let totalHkd = 0;
-                trip.expenses.forEach(e => {
-                    totalHkd += (e.hkdAmount || e.amount || 0);
-                });
+                t.expenses.forEach(e => totalHkd += (e.hkdAmount || 0));
 
-                const card = document.createElement('div');
-                card.className = 'trip-card';
-                card.innerHTML = `
-                    <div class="trip-card-header">
-                        <div class="trip-card-title">✈️ ${trip.title}</div>
-                        <span class="${trip.isFrozen ? 'trip-badge-frozen' : 'trip-badge-active'}">${trip.isFrozen ? '🔒 已凍結' : '🟢 進行中'}</span>
-                    </div>
-                    <div style="font-size: 0.85rem; color: #4b5563; margin-bottom: 8px;">
-                        總洗費: <b style="color: var(--trip-blue);">$${totalHkd.toFixed(1)} HKD</b> | 筆數: ${trip.expenses.length} 筆
-                    </div>
-                    <div style="display: flex; gap: 8px;">
-                        <button class="btn-sm-action" style="background: var(--trip-blue); color: white;" onclick="openTripDetailModal(${trip.id})">詳細與記帳</button>
-                        <button class="bookmark-del-btn" onclick="deleteTrip(${trip.id})">刪除旅程</button>
+                html += `
+                    <div class="trip-card">
+                        <div class="trip-card-header">
+                            <div class="trip-card-title">${t.title}</div>
+                            <div>
+                                <span class="${t.isFrozen ? 'trip-badge-frozen' : 'trip-badge-active'}">${t.isFrozen ? '🔒 已凍結' : '🟢 進行中'}</span>
+                            </div>
+                        </div>
+                        <div style="font-size: 0.85rem; color: #4b5563; margin-bottom: 8px;">
+                            開支總計：<strong>$${totalHkd.toFixed(1)} HKD</strong> (${t.expenses.length}筆記錄)
+                        </div>
+                        <button class="btn-sm-action" style="width: 100%; background: var(--trip-blue); color: white; text-align: center;" onclick="openTripDetailModal(${t.id})">📂 進入旅程詳情與記帳</button>
                     </div>
                 `;
-                container.appendChild(card);
             });
+            document.getElementById('trip-list-container').innerHTML = html || '<div style="text-align:center; color:#6b7280; padding:20px;">暫無旅程</div>';
         }
 
         function openCreateTripModal() {
             document.getElementById('trip-input-title').value = '';
             document.getElementById('create-trip-modal').classList.add('active');
         }
+
         function closeCreateTripModal() {
             document.getElementById('create-trip-modal').classList.remove('active');
         }
+
         function saveNewTrip() {
-            const title = document.getElementById('trip-input-title').value;
+            let title = document.getElementById('trip-input-title').value;
             if (!title) {
                 alert('請輸入旅程名稱');
                 return;
             }
-            appData.trips.push({
+            appData.trips.unshift({
                 id: Date.now(),
                 title: title,
                 isFrozen: false,
@@ -1977,110 +2158,93 @@
             closeCreateTripModal();
             renderAll();
         }
-        function deleteTrip(id) {
-            if (confirm('確定要刪除此旅程嗎？')) {
-                appData.trips = appData.trips.filter(t => t.id !== id);
-                renderAll();
-            }
-        }
 
         function openTripDetailModal(tripId) {
             currentEditingTripId = tripId;
-            const trip = appData.trips.find(t => t.id === tripId);
-            if (!trip) return;
+            let t = appData.trips.find(x => x.id === tripId);
+            if (!t) return;
 
-            document.getElementById('trip-detail-modal-title').innerText = trip.title;
-            renderExchangeRateList(trip);
+            document.getElementById('trip-detail-modal-title').innerText = t.title;
+            
+            // Render exchange rates
+            let exHtml = '';
+            for (let cur in t.exchangeTable) {
+                exHtml += `<div style="font-size: 0.85rem;">1 ${cur} = ${t.exchangeTable[cur]} HKD</div>`;
+            }
+            document.getElementById('exchange-rate-list').innerHTML = exHtml;
 
-            const freezeBtn = document.getElementById('trip-freeze-btn');
-            const freezeText = document.getElementById('trip-freeze-text');
-            if (trip.isFrozen) {
-                freezeText.innerText = '狀態：已凍結匯率';
+            // Freeze status
+            let freezeText = document.getElementById('trip-freeze-text');
+            let freezeBtn = document.getElementById('trip-freeze-btn');
+            if (t.isFrozen) {
+                freezeText.innerText = '狀態：已凍結 (匯率已鎖定)';
                 freezeBtn.innerText = '🔓 解除凍結';
             } else {
                 freezeText.innerText = '狀態：進行中 (匯率即時更新)';
                 freezeBtn.innerText = '🔒 凍結旅程金額';
             }
 
-            renderTripExpensesList(trip);
+            // Expenses list
+            let expHtml = '';
+            t.expenses.forEach(e => {
+                expHtml += `
+                    <div class="record-card" style="padding: 10px; margin-bottom: 6px;">
+                        <div class="record-info">
+                            <div style="font-size: 0.85rem;"><span class="badge badge-trip">旅程開支</span> ${e.activity}</div>
+                            <div style="font-size: 0.75rem;">📅 ${e.date} | ${e.amount} ${e.currency} (≈ $${e.hkdAmount} HKD)</div>
+                        </div>
+                        <div class="record-amount">
+                            <button class="bookmark-del-btn" onclick="deleteTripExpense(${e.id})">刪除</button>
+                        </div>
+                    </div>
+                `;
+            });
+            document.getElementById('trip-expense-list').innerHTML = expHtml || '<div style="font-size:0.8rem; color:#6b7280; text-align:center; padding:10px;">暫無旅程開支</div>';
+
             document.getElementById('trip-detail-modal').classList.add('active');
         }
 
         function closeTripDetailModal() {
             document.getElementById('trip-detail-modal').classList.remove('active');
-            currentEditingTripId = null;
             renderAll();
         }
 
-        function renderExchangeRateList(trip) {
-            const listEl = document.getElementById('exchange-rate-list');
-            listEl.innerHTML = '';
-            for (let curr in trip.exchangeTable) {
-                listEl.innerHTML += `
-                    <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 3px;">
-                        <span>1 ${curr} = ${trip.exchangeTable[curr]} HKD</span>
-                    </div>
-                `;
-            }
-        }
-
         function saveExchangeRate() {
-            const trip = appData.trips.find(t => t.id === currentEditingTripId);
-            if (!trip) return;
-            const curr = document.getElementById('ex-currency').value.toUpperCase();
-            const rate = parseFloat(document.getElementById('ex-rate').value) || 1;
-            if (!curr) return;
-            trip.exchangeTable[curr] = rate;
+            let cur = document.getElementById('ex-currency').value.trim().toUpperCase();
+            let rate = parseFloat(document.getElementById('ex-rate').value) || 0;
+            if (!cur || rate <= 0) {
+                alert('請輸入有效幣別與匯率');
+                return;
+            }
+            let t = appData.trips.find(x => x.id === currentEditingTripId);
+            if (!t) return;
+            t.exchangeTable[cur] = rate;
             document.getElementById('ex-currency').value = '';
             document.getElementById('ex-rate').value = '';
-            renderExchangeRateList(trip);
+            openTripDetailModal(currentEditingTripId);
         }
 
         function toggleTripFreeze() {
-            const trip = appData.trips.find(t => t.id === currentEditingTripId);
-            if (!trip) return;
-            trip.isFrozen = !trip.isFrozen;
-            openTripDetailModal(trip.id);
-        }
-
-        function renderTripExpensesList(trip) {
-            const listEl = document.getElementById('trip-expense-list');
-            listEl.innerHTML = '';
-            if (trip.expenses.length === 0) {
-                listEl.innerHTML = '<div style="text-align: center; color: #6b7280; padding: 10px; font-size: 0.85rem;">暫無旅程開支</div>';
-                return;
-            }
-
-            trip.expenses.forEach(e => {
-                listEl.innerHTML += `
-                    <div class="record-card" style="padding: 10px; margin-bottom: 6px;">
-                        <div class="record-info">
-                            <div style="font-size: 0.85rem;"><span class="badge badge-trip">${e.activity}</span></div>
-                            <div style="font-size: 0.75rem;">📅 ${e.date} | 原幣: ${e.amount} ${e.currency}</div>
-                        </div>
-                        <div class="record-amount">
-                            <div class="record-cost" style="font-size: 0.9rem;">$${e.hkdAmount || e.amount} HKD</div>
-                            <button class="bookmark-del-btn" style="margin-top: 4px;" onclick="deleteTripExpense(${e.id})">刪除</button>
-                        </div>
-                    </div>
-                `;
-            });
+            let t = appData.trips.find(x => x.id === currentEditingTripId);
+            if (!t) return;
+            t.isFrozen = !t.isFrozen;
+            openTripDetailModal(currentEditingTripId);
         }
 
         function openTripExpenseModal() {
             document.getElementById('te-input-date').value = new Date().toISOString().split('T')[0];
             document.getElementById('te-input-activity').value = '';
             document.getElementById('te-input-amount').value = '';
-            document.getElementById('te-input-currency').value = 'JPY';
+            document.getElementById('te-input-currency').value = 'HKD';
 
-            const trip = appData.trips.find(t => t.id === currentEditingTripId);
-            if (trip) {
-                const sel = document.getElementById('te-select-bookmark');
-                sel.innerHTML = '<option value="">-- 選擇常用活動類型 --</option>';
-                trip.bookmarks.forEach(b => {
-                    sel.innerHTML += `<option value="${b}">${b}</option>`;
-                });
-            }
+            let t = appData.trips.find(x => x.id === currentEditingTripId);
+            if (!t) return;
+            let sel = document.getElementById('te-select-bookmark');
+            let html = '<option value="">-- 選擇常用活動類型 --</option>';
+            t.bookmarks.forEach(b => {
+                html += `<option value="${b}">${b}</option>`;
+            });
+            sel.innerHTML = html;
 
             document.getElementById('trip-expense-modal').classList.add('active');
         }
@@ -2090,55 +2254,82 @@
         }
 
         function fillTripBookmark() {
-            const val = document.getElementById('te-select-bookmark').value;
+            let val = document.getElementById('te-select-bookmark').value;
             if (val) {
                 document.getElementById('te-input-activity').value = val;
             }
         }
 
         function saveTripExpense() {
-            const trip = appData.trips.find(t => t.id === currentEditingTripId);
-            if (!trip) return;
+            let t = appData.trips.find(x => x.id === currentEditingTripId);
+            if (!t) return;
 
-            const date = document.getElementById('te-input-date').value;
-            const activity = document.getElementById('te-input-activity').value || '消費';
-            const amount = parseFloat(document.getElementById('te-input-amount').value) || 0;
-            const currency = document.getElementById('te-input-currency').value.toUpperCase() || 'HKD';
+            let date = document.getElementById('te-input-date').value;
+            let activity = document.getElementById('te-input-activity').value || '一般消費';
+            let amount = parseFloat(document.getElementById('te-input-amount').value) || 0;
+            let currency = document.getElementById('te-input-currency').value.trim().toUpperCase() || 'HKD';
 
-            let rateUsed = trip.exchangeTable[currency] || 1;
-            let hkdAmount = Number((amount * rateUsed).toFixed(1));
+            let rate = t.exchangeTable[currency] || 1;
+            let hkdAmount = parseFloat((amount * rate).toFixed(1));
 
-            trip.expenses.unshift({
+            t.expenses.unshift({
                 id: Date.now(),
                 date: date,
                 activity: activity,
                 amount: amount,
                 currency: currency,
                 hkdAmount: hkdAmount,
-                rateUsed: rateUsed
+                rateUsed: rate
             });
 
             closeTripExpenseModal();
-            openTripDetailModal(trip.id);
+            openTripDetailModal(currentEditingTripId);
         }
 
         function deleteTripExpense(expenseId) {
-            const trip = appData.trips.find(t => t.id === currentEditingTripId);
-            if (!trip) return;
-            trip.expenses = trip.expenses.filter(e => e.id !== expenseId);
-            openTripDetailModal(trip.id);
+            let t = appData.trips.find(x => x.id === currentEditingTripId);
+            if (!t) return;
+            t.expenses = t.expenses.filter(e => e.id !== expenseId);
+            openTripDetailModal(currentEditingTripId);
         }
 
         function openTripBookmarkManage() {
-            // Simple prompt or modal
-            const name = prompt('請輸入新的旅程活動標籤名稱：');
-            if (name) {
-                const trip = appData.trips.find(t => t.id === currentEditingTripId);
-                if (trip && !trip.bookmarks.includes(name)) {
-                    trip.bookmarks.push(name);
-                    openTripExpenseModal();
-                }
+            let t = appData.trips.find(x => x.id === currentEditingTripId);
+            if (!t) return;
+            let html = '';
+            t.bookmarks.forEach(b => {
+                html += `
+                    <div class="bookmark-item">
+                        <div><strong>${b}</strong></div>
+                        <button class="bookmark-del-btn" onclick="deleteTripBookmark('${b}')">刪除</button>
+                    </div>
+                `;
+            });
+            document.getElementById('trip-bookmark-manage-list').innerHTML = html;
+            document.getElementById('trip-bookmark-modal').classList.add('active');
+        }
+
+        function closeTripBookmarkManage() {
+            document.getElementById('trip-bookmark-modal').classList.remove('active');
+        }
+
+        function saveNewTripBookmark() {
+            let t = appData.trips.find(x => x.id === currentEditingTripId);
+            if (!t) return;
+            let name = document.getElementById('tb-input-name').value.trim();
+            if (!name) return;
+            if (!t.bookmarks.includes(name)) {
+                t.bookmarks.push(name);
             }
+            document.getElementById('tb-input-name').value = '';
+            openTripBookmarkManage();
+        }
+
+        function deleteTripBookmark(name) {
+            let t = appData.trips.find(x => x.id === currentEditingTripId);
+            if (!t) return;
+            t.bookmarks = t.bookmarks.filter(b => b !== name);
+            openTripBookmarkManage();
         }
 
 
@@ -2151,31 +2342,46 @@
             document.getElementById('section-' + tabName).classList.add('active');
         }
 
-        function renderDebtView() {
-            const payList = document.getElementById('payable-records-list');
-            const recList = document.getElementById('receivable-records-list');
-            payList.innerHTML = '';
-            recList.innerHTML = '';
+        function renderDebtModule() {
+            let payHtml = '';
+            let recHtml = '';
 
-            appData.debtRecords.forEach(r => {
-                const card = document.createElement('div');
-                card.className = 'record-card';
-                card.innerHTML = `
-                    <div class="record-info">
-                        <div><b>${r.who}</b> (${r.why || '無備註'})</div>
-                        <div>📅 ${r.date}</div>
-                    </div>
-                    <div class="record-amount">
-                        <div class="record-cost" style="color: ${r.kind === 'payable' ? 'var(--danger)' : 'var(--success)'};">$${r.money}</div>
-                        <button class="btn-repaid" onclick="deleteDebtRecord(${r.id})">已結清/刪除</button>
-                    </div>
-                `;
-                if (r.kind === 'payable') {
-                    payList.appendChild(card);
+            appData.debtRecords.forEach(d => {
+                if (d.kind === 'payable') {
+                    payHtml += `
+                        <div class="record-card">
+                            <div class="record-info">
+                                <div><span class="badge badge-kmb">應付款</span> 債權人: ${d.who}</div>
+                                <div>📅 ${d.date} | 原因: ${d.why}</div>
+                            </div>
+                            <div class="record-amount">
+                                <div class="record-cost deficit">-$${d.money}</div>
+                                <div style="margin-top: 4px;">
+                                    <button class="btn-repaid" onclick="deleteDebtRecord(${d.id})">已還清</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
                 } else {
-                    recList.appendChild(card);
+                    recHtml += `
+                        <div class="record-card">
+                            <div class="record-info">
+                                <div><span class="badge badge-reimburse">應收款</span> 欠款人: ${d.who}</div>
+                                <div>📅 ${d.date} | 原因: ${d.why}</div>
+                            </div>
+                            <div class="record-amount">
+                                <div class="record-cost surplus">+$${d.money}</div>
+                                <div style="margin-top: 4px;">
+                                    <button class="btn-repaid" onclick="deleteDebtRecord(${d.id})">已收回</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
                 }
             });
+
+            document.getElementById('payable-records-list').innerHTML = payHtml || '<div style="text-align:center; color:#6b7280; padding:20px;">暫無應付款紀錄</div>';
+            document.getElementById('receivable-records-list').innerHTML = recHtml || '<div style="text-align:center; color:#6b7280; padding:20px;">暫無應收款紀錄</div>';
         }
 
         function openPayableModal() {
@@ -2185,17 +2391,31 @@
             document.getElementById('pay-why').value = '';
             document.getElementById('payable-modal').classList.add('active');
         }
-        function closePayableModal() { document.getElementById('payable-modal').classList.remove('active'); }
+
+        function closePayableModal() {
+            document.getElementById('payable-modal').classList.remove('active');
+        }
 
         function savePayableRecord() {
+            let date = document.getElementById('pay-date').value;
+            let who = document.getElementById('pay-who').value;
+            let money = parseFloat(document.getElementById('pay-money').value) || 0;
+            let why = document.getElementById('pay-why').value || '一般代付';
+
+            if (!who) {
+                alert('請輸入債權人');
+                return;
+            }
+
             appData.debtRecords.unshift({
                 id: Date.now(),
                 kind: 'payable',
-                who: document.getElementById('pay-who').value || '某人',
-                money: parseFloat(document.getElementById('pay-money').value) || 0,
-                why: document.getElementById('pay-why').value,
-                date: document.getElementById('pay-date').value
+                who: who,
+                money: money,
+                why: why,
+                date: date
             });
+
             closePayableModal();
             renderAll();
         }
@@ -2207,30 +2427,46 @@
             document.getElementById('rec-why').value = '';
             document.getElementById('receivable-modal').classList.add('active');
         }
-        function closeReceivableModal() { document.getElementById('receivable-modal').classList.remove('active'); }
+
+        function closeReceivableModal() {
+            document.getElementById('receivable-modal').classList.remove('active');
+        }
 
         function saveReceivableRecord() {
+            let date = document.getElementById('rec-date').value;
+            let who = document.getElementById('rec-who').value;
+            let money = parseFloat(document.getElementById('rec-money').value) || 0;
+            let why = document.getElementById('rec-why').value || '一般借出';
+
+            if (!who) {
+                alert('請輸入欠款人');
+                return;
+            }
+
             appData.debtRecords.unshift({
                 id: Date.now(),
                 kind: 'receivable',
-                who: document.getElementById('rec-who').value || '某人',
-                money: parseFloat(document.getElementById('rec-money').value) || 0,
-                why: document.getElementById('rec-why').value,
-                date: document.getElementById('rec-date').value
+                who: who,
+                money: money,
+                why: why,
+                date: date
             });
+
             closeReceivableModal();
             renderAll();
         }
 
         function deleteDebtRecord(id) {
-            appData.debtRecords = appData.debtRecords.filter(r => r.id !== id);
-            renderAll();
+            if (confirm('確定結清此筆債務記錄？')) {
+                appData.debtRecords = appData.debtRecords.filter(d => d.id !== id);
+                renderAll();
+            }
         }
 
 
-        // ==================== EXPORT / IMPORT ====================
+        // ==================== EXPORT & IMPORT DATA ====================
         function exportDataFile() {
-            const jsonStr = JSON.stringify(appData, null, 2);
+            let jsonStr = JSON.stringify(appData, null, 2);
             document.getElementById('export-preview-textarea').value = jsonStr;
             document.getElementById('export-preview-modal').classList.add('active');
         }
@@ -2240,8 +2476,8 @@
         }
 
         function copyExportText() {
-            const txt = document.getElementById('export-preview-textarea');
-            txt.select();
+            let textarea = document.getElementById('export-preview-textarea');
+            textarea.select();
             document.execCommand('copy');
             alert('已成功複製備份文字到剪貼簿！');
         }
@@ -2251,18 +2487,17 @@
         }
 
         function importDataFile(event) {
-            const file = event.target.files[0];
+            let file = event.target.files[0];
             if (!file) return;
-            const reader = new FileReader();
+            let reader = new FileReader();
             reader.onload = function(e) {
                 try {
-                    const parsed = JSON.parse(e.target.result);
+                    let parsed = JSON.parse(e.target.result);
                     appData = parsed;
-                    if (!appData.foodHistory) appData.foodHistory = appData.foodPastCycles || [];
                     renderAll();
-                    alert('成功匯入紀錄並更新儀表板！');
-                } catch(err) {
-                    alert('匯入失敗：檔案格式不正確 (需為有效的 JSON/TXT 備份)');
+                    alert('成功匯入數據！');
+                } catch (err) {
+                    alert('匯入失敗：檔案格式不正確 (需為有效的 JSON/TXT 格式)');
                 }
             };
             reader.readAsText(file);
