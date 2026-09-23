@@ -172,8 +172,6 @@
         .surplus { color: var(--success); }
         .deficit { color: var(--danger); }
         .badge { display: inline-block; padding: 2px 6px; font-size: 0.75rem; border-radius: 4px; font-weight: 600; margin-right: 4px; }
-        .badge-luxury { background: #e0f2fe; color: #075985; }
-        .badge-simple { background: #e0f2fe; color: #075985; }
         .badge-kmb { background: #fee2e2; color: #991b1b; }
         .badge-airport { background: #fef3c7; color: #92400e; }
         .badge-reimburse { background: #d1fae5; color: #065f46; }
@@ -1048,30 +1046,6 @@
             { "id": 1789693101511, "name": "968 (無月票)", "typeCode": "C", "rawPrice": 25.7 },
             { "id": 1789807659954, "name": "🌉 港珠澳大橋巴士", "typeCode": "C", "rawPrice": 65 }
           ],
-          "foodCycleId": 2,
-          "foodRecords": [
-            { "id": 1790139602583, "cycleId": 2, "date": "2026-09-23", "type": "簡樸餐", "name": "秋意瑤柱雞飯", "cost": 78, "budget": 100, "diff": 22 },
-            { "id": 1790078852421, "cycleId": 2, "date": "2026-09-22", "type": "簡樸餐", "name": "生滾湯飯皇", "cost": 44, "budget": 100, "diff": 56 },
-            { "id": 1790053386135, "date": "2026-09-20", "type": "豪華大餐歸零結算", "name": "豪華大餐歸零結算 (1次 x $100)", "cost": -100, "budget": 0, "diff": 100, "isResetSettlement": true, "settledCount": 1 },
-            { "id": 1790052899601, "cycleId": 2, "date": "2026-09-22", "type": "簡樸餐", "name": "NutriGo 餐盒", "cost": 71, "budget": 100, "diff": 29 },
-            { "id": 1790006794010, "cycleId": 2, "date": "2026-09-21", "type": "簡樸餐", "name": "Da Vincenzo 意大利菜", "cost": 0, "budget": 100, "diff": 100 },
-            { "id": 1789970355786, "cycleId": 2, "date": "2026-09-21", "type": "簡樸餐", "name": "珍姐炸羊架飯", "cost": 88, "budget": 100, "diff": 12 },
-            { "id": 1789901786839, "cycleId": 1, "date": "2026-09-20", "type": "簡樸餐", "name": "阿杏飯團關東煮", "cost": 34.5, "budget": 100, "diff": 65.5 },
-            { "id": 1789901764416, "cycleId": 1, "date": "2026-09-20", "type": "簡樸餐", "name": "阿杏飯團", "cost": 42, "budget": 100, "diff": 58 },
-            { "id": 1789821495694, "cycleId": 1, "date": "2026-09-19", "type": "簡樸餐", "name": "媽咪住家飯", "cost": 0, "budget": 100, "diff": 100 },
-            { "id": 1789796327280, "cycleId": 1, "date": "2026-09-19", "type": "簡樸餐", "name": "薩莉亞日式意大利菜", "cost": 47.5, "budget": 100, "diff": 52.5 },
-            { "id": 1789746781751, "cycleId": 1, "date": "2026-09-18", "type": "豪華大餐", "name": "Da Vincenzo 意大利菜", "cost": 244, "budget": 200, "diff": -44 },
-            { "id": 1789709836103, "cycleId": 1, "date": "2026-09-18", "type": "豪華大餐", "name": "Latter 蜆肉蒜香牛油意粉", "cost": 141, "budget": 200, "diff": 59 },
-            { "id": 1789658497445, "cycleId": 1, "date": "2026-09-17", "type": "簡樸餐", "name": "停一亭撈麵", "cost": 38, "budget": 100, "diff": 62 },
-            { "id": 1789655661790, "cycleId": 1, "date": "2026-09-17", "type": "簡樸餐", "name": "泰朝炒貴叼", "cost": 40, "budget": 100, "diff": 60 },
-            { "id": 1789655641626, "cycleId": 1, "date": "2026-09-16", "type": "簡樸餐", "name": "泰朝炒貴叼", "cost": 40, "budget": 100, "diff": 60 },
-            { "id": 1789655505562, "cycleId": 1, "date": "2026-09-16", "type": "簡樸餐", "name": "喬兄塒弟海南雞飯", "cost": 47, "budget": 100, "diff": 53 },
-            { "id": 1789655491105, "cycleId": 1, "date": "2026-09-15", "type": "簡樸餐", "name": "喬兄塒弟海南雞飯", "cost": 74, "budget": 100, "diff": 26 },
-            { "id": 1789655276172, "cycleId": 1, "date": "2026-09-15", "type": "簡樸餐", "name": "NutriGo 餐盒", "cost": 71, "budget": 100, "diff": 29 },
-            { "id": 1789655266583, "cycleId": 1, "date": "2026-09-14", "type": "簡樸餐", "name": "元氣壽司", "cost": 102, "budget": 100, "diff": -2 },
-            { "id": 1789655231452, "cycleId": 1, "date": "2026-09-14", "type": "簡樸餐", "name": "NutriGo 餐盒", "cost": 71, "budget": 100, "diff": 29 }
-          ],
-          "foodPastCycles": [],
           "transitPassCount": 1
         };
 
@@ -1493,7 +1467,6 @@
             const cycles = [...new Set(foodRecords.map(r => r.cycleId || 1))].sort((a,b)=>a-b);
             if(!cycles.includes(foodCycleId)) cycles.push(foodCycleId);
 
-            // 如果預設為 LATEST，自動將 currentFoodDisplayCycle 設為最新週期 (最大 cycleId)
             if (currentFoodDisplayCycle === 'LATEST') {
                 currentFoodDisplayCycle = cycles.length > 0 ? Math.max(...cycles) : foodCycleId;
             }
@@ -1542,7 +1515,6 @@
                 return;
             }
 
-            // Fixed budget 100 per meal as requested
             const budget = 100;
             const diff = budget - cost;
             const type = cost > budget ? '豪華大餐' : '簡樸餐';
@@ -1578,7 +1550,7 @@
         function confirmResetFoodCycle() {
             if(confirm('確定要重置並開啟新一期食幾多慳幾多週期嗎？')) {
                 foodCycleId += 1;
-                currentFoodDisplayCycle = foodCycleId; // 轉去新開嘅最新週期
+                currentFoodDisplayCycle = foodCycleId;
                 saveAllData();
                 renderFood();
                 updateDashboardOverview();
@@ -1659,8 +1631,6 @@
                 listEl.innerHTML = '<div style="text-align:center; color:#9ca3af; padding:20px;">暫無餐食記錄</div>';
             } else {
                 listEl.innerHTML = filtered.map(r => {
-                    // 根據預算/消費金額判斷 3 個 Tier
-                    // 假設以 cost 嚟分： <50, >100, in between (50-100)
                     let tierClass = '';
                     let tierLabel = '';
                     if (r.cost < 50) {
@@ -1678,7 +1648,6 @@
                         <div class="record-card">
                             <div class="record-info">
                                 <div>
-                                    <span class="badge badge-simple">${r.type}</span>
                                     <span class="badge ${tierClass}">${tierLabel}</span>
                                     ${r.name}
                                 </div>
@@ -1978,7 +1947,7 @@
             `).join('');
         }
 
-        // TRIP & DEBT STUBS (Fully preserved functional integrity)
+        // TRIP & DEBT STUBS
         function renderTrips() {
             const container = document.getElementById('trip-list-container');
             if(!container) return;
