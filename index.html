@@ -72,7 +72,7 @@
         .module-title { font-size: 1.1rem; font-weight: 700; color: var(--primary); }
 
         /* General KPI styling */
-        .kpi-container { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .kpi-container { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 16px; }
         .kpi-card { background: var(--card-bg); padding: 16px; border-radius: 12px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .kpi-title { font-size: 0.85rem; color: #6b7280; font-weight: 600; margin-bottom: 6px; }
         .kpi-value { font-size: 1.4rem; font-weight: 800; color: var(--primary); }
@@ -172,7 +172,7 @@
         .surplus { color: var(--success); }
         .deficit { color: var(--danger); }
         .badge { display: inline-block; padding: 2px 6px; font-size: 0.75rem; border-radius: 4px; font-weight: 600; margin-right: 4px; }
-        .badge-luxury { background: #fef3c7; color: #92400e; }
+        .badge-luxury { background: #e0f2fe; color: #075985; }
         .badge-simple { background: #e0f2fe; color: #075985; }
         .badge-kmb { background: #fee2e2; color: #991b1b; }
         .badge-airport { background: #fef3c7; color: #92400e; }
@@ -372,10 +372,6 @@
 
         <div class="kpi-container">
             <div class="kpi-card">
-                <div class="kpi-title">本週期豪華大餐剩額</div>
-                <div class="kpi-value" id="luxury-left">4 次</div>
-            </div>
-            <div class="kpi-card">
                 <div class="kpi-title">食幾多慳幾多結餘</div>
                 <div class="kpi-value" id="total-balance">$0</div>
             </div>
@@ -389,11 +385,6 @@
             <button class="undo-btn" onclick="deleteLastFoodStep()">↩️ 刪除上一筆</button>
             <button class="history-btn" onclick="openFoodHistoryModal()">📜 歷屆紀錄</button>
             <button class="reset-btn" onclick="confirmResetFoodCycle()">🔄 重置週期</button>
-        </div>
-
-        <!-- 豪華大餐歸零結算按鈕 -->
-        <div style="margin-bottom: 16px;">
-            <button class="add-btn add-btn-success" style="width: 100%; padding: 12px; font-size: 0.95rem;" onclick="settleLuxuryReset()">✨ 豪華大餐歸零結算 (次數x$100入結餘)</button>
         </div>
 
         <div class="list-header">
@@ -576,18 +567,11 @@
                 <input type="date" id="edit-food-date" class="form-control">
             </div>
             <div class="form-group">
-                <label>餐點類型</label>
-                <select id="edit-food-type" class="form-control">
-                    <option value="豪華大餐">豪華大餐 ($200)</option>
-                    <option value="簡樸餐">簡樸餐 ($100)</option>
-                </select>
-            </div>
-            <div class="form-group">
                 <label>食咗啲咩</label>
                 <input type="text" id="edit-food-name" class="form-control">
             </div>
             <div class="form-group">
-                <label>食咗幾多錢 ($)</label>
+                <label>食咗幾多錢 ($) (每餐預算固定 $100)</label>
                 <input type="number" id="edit-food-cost" class="form-control" step="0.1">
             </div>
             <div class="modal-actions">
@@ -963,19 +947,12 @@
                 <input type="date" id="food-input-date" class="form-control">
             </div>
             <div class="form-group">
-                <label>餐點類型</label>
-                <div class="type-selector" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
-                    <div class="type-btn active" id="btn-luxury" onclick="selectFoodType('豪華大餐')">豪華大餐 ($200)</div>
-                    <div class="type-btn" id="btn-simple" onclick="selectFoodType('簡樸餐')">簡樸餐 ($100)</div>
-                </div>
-            </div>
-            <div class="form-group">
                 <label>食咗啲咩</label>
                 <input type="text" id="food-input-name" class="form-control" placeholder="例：日式燒肉放題">
             </div>
             <div class="form-group">
-                <label>食咗幾多錢 ($)</label>
-                <input type="number" id="food-input-cost" class="form-control" placeholder="例：180">
+                <label>食咗幾多錢 ($) (每餐預算固定 $100)</label>
+                <input type="number" id="food-input-cost" class="form-control" placeholder="例：80">
             </div>
             <div class="modal-actions">
                 <button class="btn-cancel" onclick="closeFoodModal()">取消</button>
@@ -2023,7 +2000,6 @@
             if (!r) return;
             document.getElementById('edit-food-id').value = r.id;
             document.getElementById('edit-food-date').value = r.date;
-            document.getElementById('edit-food-type').value = r.type;
             document.getElementById('edit-food-name').value = r.name;
             document.getElementById('edit-food-cost').value = r.cost;
             document.getElementById('edit-food-modal').classList.add('active');
@@ -2036,7 +2012,6 @@
         function updateFoodRecord() {
             const id = parseInt(document.getElementById('edit-food-id').value);
             const dateVal = document.getElementById('edit-food-date').value;
-            const typeVal = document.getElementById('edit-food-type').value;
             const nameVal = document.getElementById('edit-food-name').value.trim();
             const costVal = parseFloat(document.getElementById('edit-food-cost').value);
 
@@ -2045,13 +2020,13 @@
                 return;
             }
 
-            const budget = typeVal === '豪華大餐' ? 200 : 100;
+            const budget = 100;
             const diff = budget - costVal;
 
             const idx = foodRecords.findIndex(item => item.id === id);
             if (idx !== -1) {
                 foodRecords[idx].date = dateVal;
-                foodRecords[idx].type = typeVal;
+                foodRecords[idx].type = '一般餐';
                 foodRecords[idx].name = nameVal;
                 foodRecords[idx].cost = costVal;
                 foodRecords[idx].budget = budget;
@@ -2451,9 +2426,23 @@
 
         // ==================== FOOD MODULE LOGIC ====================
         let foodCycleId = parseInt(localStorage.getItem('god_cookery_cycle_id') || '1');
-        let foodRecords = JSON.parse(localStorage.getItem('god_cookery_records_v2') || '[]');
+        let rawFoodRecords = JSON.parse(localStorage.getItem('god_cookery_records_v2') || '[]');
+        
+        // Data Migration / Uniform handling: 統一將舊的豪華/簡樸餐轉為統一預算 $100，並相容舊資料
+        let foodRecords = rawFoodRecords.map(r => {
+            let cost = r.cost;
+            let isReset = r.isResetSettlement || false;
+            let budget = isReset ? 0 : 100;
+            let diff = isReset ? r.diff : (budget - cost);
+            return {
+                ...r,
+                type: isReset ? r.type : '一般餐',
+                budget: budget,
+                diff: diff
+            };
+        });
+
         let foodPastCycles = JSON.parse(localStorage.getItem('god_cookery_past_cycles') || '[]');
-        let currentSelectedFoodType = '豪華大餐';
 
         function populateFoodCycleJump() {
             const selectEl = document.getElementById('food-cycle-jump');
@@ -2481,30 +2470,12 @@
             populateFoodCycleJump();
             document.getElementById('food-input-date').valueAsDate = new Date();
             document.getElementById('food-input-name').value = '';
-            document.getElementById('food-input-cost').value = '180';
-            selectFoodType('豪華大餐');
+            document.getElementById('food-input-cost').value = '';
             document.getElementById('food-modal').classList.add('active');
         }
 
         function closeFoodModal() {
             document.getElementById('food-modal').classList.remove('active');
-        }
-
-        function selectFoodType(type) {
-            currentSelectedFoodType = type;
-            const btnLuxury = document.getElementById('btn-luxury');
-            const btnSimple = document.getElementById('btn-simple');
-            const costInput = document.getElementById('food-input-cost');
-
-            if (type === '豪華大餐') {
-                btnLuxury.classList.add('active');
-                btnSimple.classList.remove('active');
-                costInput.value = '180';
-            } else {
-                btnSimple.classList.add('active');
-                btnLuxury.classList.remove('active');
-                costInput.value = '80';
-            }
         }
 
         function saveFoodRecord() {
@@ -2517,14 +2488,14 @@
                 return;
             }
 
-            const budget = currentSelectedFoodType === '豪華大餐' ? 200 : 100;
+            const budget = 100;
             const diff = budget - costVal;
 
             const newRecord = {
                 id: Date.now(),
                 cycleId: foodCycleId,
                 date: dateVal,
-                type: currentSelectedFoodType,
+                type: '一般餐',
                 name: nameVal,
                 cost: costVal,
                 budget: budget,
@@ -2540,7 +2511,7 @@
         }
 
         function deleteLastFoodStep() {
-            const activeIndex = foodRecords.findIndex(r => r.cycleId === foodCycleId && r.type !== '豪華大餐歸零結算');
+            const activeIndex = foodRecords.findIndex(r => r.cycleId === foodCycleId && !r.isResetSettlement);
             if (activeIndex === -1) {
                 alert('本期沒有可刪除的餐食記錄！');
                 return;
@@ -2560,42 +2531,6 @@
                 localStorage.setItem('god_cookery_records_v2', JSON.stringify(foodRecords));
                 renderFood();
                 updateDashboardOverview();
-            }
-        }
-
-        function settleLuxuryReset() {
-            const activeRecords = foodRecords.filter(r => r.cycleId === foodCycleId);
-            const luxuryCount = activeRecords.filter(r => r.type === '豪華大餐').length;
-            const luxuryLeft = 4 - luxuryCount;
-
-            if (luxuryLeft <= 0) {
-                alert('目前豪華大餐剩餘次數不大於 0（或已歸零），無需進行歸零結算！');
-                return;
-            }
-
-            if (confirm(`確定要將當前剩餘的 ${luxuryLeft} 次豪華大餐進行歸零結算嗎？\n將會增加 $${luxuryLeft * 100} 到結餘中。`)) {
-                const addAmount = luxuryLeft * 100;
-                const todayStr = new Date().toISOString().substring(0, 10);
-
-                const resetRecord = {
-                    id: Date.now(),
-                    cycleId: foodCycleId,
-                    date: todayStr,
-                    type: '豪華大餐歸零結算',
-                    name: `豪華大餐歸零結算 (${luxuryLeft}次 x $100)`,
-                    cost: -addAmount,
-                    budget: 0,
-                    diff: addAmount,
-                    isResetSettlement: true,
-                    settledCount: luxuryLeft
-                };
-
-                foodRecords.unshift(resetRecord);
-                localStorage.setItem('god_cookery_records_v2', JSON.stringify(foodRecords));
-
-                renderFood();
-                updateDashboardOverview();
-                alert(`已成功進行歸零結算！增加結餘 +$${addAmount}。`);
             }
         }
 
@@ -2654,15 +2589,6 @@
             document.getElementById('food-cycle-id').innerText = `週期 #${foodCycleId}`;
             const activeRecords = foodRecords.filter(r => r.cycleId === foodCycleId);
 
-            const luxuryCount = activeRecords.filter(r => r.type === '豪華大餐').length;
-            const hasResetSettled = activeRecords.some(r => r.isResetSettlement);
-            let luxuryLeft = 4 - luxuryCount;
-            if (hasResetSettled || luxuryLeft < 0) {
-                luxuryLeft = 0;
-            }
-
-            document.getElementById('luxury-left').innerText = `${luxuryLeft} 次`;
-
             const totalBalance = activeRecords.reduce((sum, r) => sum + r.diff, 0);
             const balanceEl = document.getElementById('total-balance');
             balanceEl.innerText = `$${totalBalance.toFixed(1)}`;
@@ -2692,13 +2618,13 @@
                     `;
                 }
 
-                const badgeClass = r.type === '豪華大餐' ? 'badge-luxury' : 'badge-simple';
+                const badgeClass = 'badge-simple';
                 const diffText = r.diff >= 0 ? `省了 +$${r.diff.toFixed(1)}` : `超支 -$${Math.abs(r.diff).toFixed(1)}`;
 
                 return `
                 <div class="record-card">
                     <div class="record-info">
-                        <div><span class="badge ${badgeClass}">${r.type}</span> ${r.name}</div>
+                        <div><span class="badge ${badgeClass}">一般餐</span> ${r.name}</div>
                         <div>日期：${r.date} (預算 $${r.budget} / 實付 $${r.cost})</div>
                     </div>
                     <div class="record-amount">
@@ -2790,7 +2716,7 @@
             const receivablesTotal = debtRecords.filter(r => r.kind === 'receivable').reduce((sum, r) => sum + r.money, 0);
             document.getElementById('dash-btn-debt').innerText = `欠:$${payablesTotal.toFixed(1)} / 收:$${receivablesTotal.toFixed(1)}`;
 
-            // 7. Total Expense (按照此前需求：食幾多慳幾多 spending + 九巴月票 spending + 運動 spending + 錢變成喜歡的形狀 spending)
+            // 7. Total Expense
             let foodSpendingTotal = 0;
             foodRecords.forEach(r => {
                 if (matchSelectedDate(r.date) && !r.isResetSettlement && r.cost > 0) {
@@ -2813,7 +2739,7 @@
             document.getElementById('home-total-expense').innerText = `$${grandTotalExpense.toFixed(1)}`;
         }
 
-        // Export & Import Backup (Show txt backup content in modal with exit dashboard)
+        // Export & Import Backup
         function exportDataFile() {
             const backupData = {
                 sportRecords,
@@ -2826,7 +2752,7 @@
                 transitPastCycles,
                 transitBookmarks,
                 foodCycleId,
-                foodRecords,
+                foodRecords: foodRecords.map(r => ({ ...r, type: r.type === '一般餐' ? '簡樸餐' : r.type })), // 匯出時相容回原格式
                 foodPastCycles
             };
             const jsonString = JSON.stringify(backupData, null, 2);
@@ -2837,7 +2763,7 @@
         function copyExportText() {
             const textarea = document.getElementById('export-preview-textarea');
             textarea.select();
-            textarea.setSelectionRange(0, 99999); // For mobile devices
+            textarea.setSelectionRange(0, 99999);
             try {
                 navigator.clipboard.writeText(textarea.value).then(() => {
                     alert('已成功複製所有文字到剪貼簿！');
