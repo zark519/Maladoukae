@@ -182,9 +182,14 @@
         .badge-love { background: #ede9fe; color: #6d28d9; }
         .badge-trip { background: #e0f2fe; color: #0369a1; }
         
+        /* New Food Tier Badges */
+        .badge-tier-green { background: #d1fae5; color: #065f46; } /* < 50 抵食夾大件 */
+        .badge-tier-blue { background: #e0f2fe; color: #0369a1; }  /* 50-100 正常發揮 */
+        .badge-tier-red { background: #fee2e2; color: #991b1b; }   /* > 100 食豪啲獎勵自己 */
+
         /* History Modal Styling */
         .history-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; margin-bottom: 12px; }
-        .history-header { display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 8px; border-bottom: 1px solid #cbd5e1; padding-bottom: 6px; }
+        .history-header { display: flex; justify-content: space-between; font-weight: 700; margin-bottom: 8px; border-bottom: 1px solid #cbd5e1; padding-bottom: 6px; align-items: center; }
         .history-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.85rem; color: #475569; }
         
         .preview-box { background: #f8fafc; border: 1px dashed #cbd5e1; padding: 10px; border-radius: 8px; margin-top: 10px; font-size: 0.85rem; }
@@ -987,7 +992,6 @@
         let currentDashboardMonth = String(new Date().getMonth() + 1).padStart(2, '0');
 
         function initDashboardDateSelectors() {
-            // 自動初始化按鈕的 active 狀態配合當日日期
             document.querySelectorAll('.year-btn').forEach(btn => {
                 if (btn.getAttribute('onclick').includes(`'${currentDashboardYear}'`)) {
                     btn.classList.add('active');
@@ -2026,7 +2030,6 @@
             const idx = foodRecords.findIndex(item => item.id === id);
             if (idx !== -1) {
                 foodRecords[idx].date = dateVal;
-                foodRecords[idx].type = '一般餐';
                 foodRecords[idx].name = nameVal;
                 foodRecords[idx].cost = costVal;
                 foodRecords[idx].budget = budget;
@@ -2297,6 +2300,7 @@
                 const netGain = totalSaved - 834;
 
                 const cycleSummary = {
+                    id: Date.now(),
                     cycleId: transitCycleId,
                     startDate: activeRecords.length > 0 ? activeRecords[activeRecords.length - 1].date : '無紀錄',
                     endDate: activeRecords.length > 0 ? activeRecords[0].date : '無紀錄',
@@ -2330,6 +2334,14 @@
                 renderTransit();
                 updateDashboardOverview();
                 alert(`已成功開啟第 #${transitCycleId} 期九巴月票，並自動記錄 $834 月票購買洗費！`);
+            }
+        }
+
+        function deleteTransitHistory(historyId) {
+            if (confirm('確定要刪除這筆九巴歷屆月票紀錄嗎？')) {
+                transitPastCycles = transitPastCycles.filter(c => c.id !== historyId);
+                localStorage.setItem('kmb_past_cycles', JSON.stringify(transitPastCycles));
+                renderTransitHistory();
             }
         }
 
@@ -2407,11 +2419,16 @@
                 listEl.innerHTML = '<div style="text-align:center; color:#9ca3af; padding:20px;">暫無已封存的月票紀錄</div>';
                 return;
             }
-            listEl.innerHTML = transitPastCycles.map(c => `
+            listEl.innerHTML = transitPastCycles.map((c, index) => {
+                const uniqueId = c.id || index;
+                return `
                 <div class="history-card">
                     <div class="history-header">
                         <span>月票期數 #${c.cycleId}</span>
-                        <span style="color: ${c.netGain >= 0 ? '#059669' : '#d90429'};">${c.netGain >= 0 ? '淨賺 +$' + c.netGain.toFixed(1) : '差 $' + Math.abs(c.netGain).toFixed(1) + '回本'}</span>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="color: ${c.netGain >= 0 ? '#059669' : '#d90429'};">${c.netGain >= 0 ? '淨賺 +$' + c.netGain.toFixed(1) : '差 $' + Math.abs(c.netGain).toFixed(1) + '回本'}</span>
+                            <button class="bookmark-del-btn" onclick="deleteTransitHistory(${uniqueId})">刪除</button>
+                        </div>
                     </div>
                     <div class="history-summary">
                         <div>起始日期：${c.startDate}</div>
@@ -2420,7 +2437,8 @@
                         <div>紀錄筆數：${c.recordCount} 筆</div>
                     </div>
                 </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
 
@@ -2428,7 +2446,6 @@
         let foodCycleId = parseInt(localStorage.getItem('god_cookery_cycle_id') || '1');
         let rawFoodRecords = JSON.parse(localStorage.getItem('god_cookery_records_v2') || '[]');
         
-        // Data Migration / Uniform handling: 統一將舊的豪華/簡樸餐轉為統一預算 $100，並相容舊資料
         let foodRecords = rawFoodRecords.map(r => {
             let cost = r.cost;
             let isReset = r.isResetSettlement || false;
@@ -2436,7 +2453,6 @@
             let diff = isReset ? r.diff : (budget - cost);
             return {
                 ...r,
-                type: isReset ? r.type : '一般餐',
                 budget: budget,
                 diff: diff
             };
@@ -2495,7 +2511,6 @@
                 id: Date.now(),
                 cycleId: foodCycleId,
                 date: dateVal,
-                type: '一般餐',
                 name: nameVal,
                 cost: costVal,
                 budget: budget,
@@ -2540,6 +2555,7 @@
                 const totalDiff = activeRecords.reduce((sum, r) => sum + r.diff, 0);
 
                 const cycleSummary = {
+                    id: Date.now(),
                     cycleId: foodCycleId,
                     startDate: activeRecords.length > 0 ? activeRecords[activeRecords.length - 1].date : '無紀錄',
                     endDate: activeRecords.length > 0 ? activeRecords[0].date : '無紀錄',
@@ -2559,16 +2575,29 @@
             }
         }
 
+        function deleteFoodHistory(historyId) {
+            if (confirm('確定要刪除這筆食幾多慳幾多歷屆週期紀錄嗎？')) {
+                foodPastCycles = foodPastCycles.filter(c => c.id !== historyId);
+                localStorage.setItem('god_cookery_past_cycles', JSON.stringify(foodPastCycles));
+                openFoodHistoryModal();
+            }
+        }
+
         function openFoodHistoryModal() {
             const listEl = document.getElementById('food-history-list');
             if (foodPastCycles.length === 0) {
                 listEl.innerHTML = '<div style="text-align:center; color:#9ca3af; padding:20px;">暫無已封存的週期紀錄</div>';
             } else {
-                listEl.innerHTML = foodPastCycles.map(c => `
+                listEl.innerHTML = foodPastCycles.map((c, index) => {
+                    const uniqueId = c.id || index;
+                    return `
                     <div class="history-card">
                         <div class="history-header">
                             <span>週期 #${c.cycleId}</span>
-                            <span style="color: ${c.totalBalance >= 0 ? '#059669' : '#d90429'};">總結餘: $${c.totalBalance.toFixed(1)}</span>
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <span style="color: ${c.totalBalance >= 0 ? '#059669' : '#d90429'};">總結餘: $${c.totalBalance.toFixed(1)}</span>
+                                <button class="bookmark-del-btn" onclick="deleteFoodHistory(${uniqueId})">刪除</button>
+                            </div>
                         </div>
                         <div class="history-summary">
                             <div>起始日期：${c.startDate}</div>
@@ -2576,7 +2605,8 @@
                             <div>紀錄筆數：${c.recordCount} 筆</div>
                         </div>
                     </div>
-                `).join('');
+                    `;
+                }).join('');
             }
             document.getElementById('food-history-modal').classList.add('active');
         }
@@ -2618,13 +2648,25 @@
                     `;
                 }
 
-                const badgeClass = 'badge-simple';
+                // 根據 cost 決定 3 個 tier 的 Tag 與樣式
+                let badgeClass = 'badge-tier-blue';
+                let tierLabel = '正常發揮';
+                let costVal = r.cost;
+
+                if (costVal < 50) {
+                    badgeClass = 'badge-tier-green';
+                    tierLabel = '抵食夾大件';
+                } else if (costVal > 100) {
+                    badgeClass = 'badge-tier-red';
+                    tierLabel = '食豪啲獎勵自己';
+                }
+
                 const diffText = r.diff >= 0 ? `省了 +$${r.diff.toFixed(1)}` : `超支 -$${Math.abs(r.diff).toFixed(1)}`;
 
                 return `
                 <div class="record-card">
                     <div class="record-info">
-                        <div><span class="badge ${badgeClass}">一般餐</span> ${r.name}</div>
+                        <div><span class="badge ${badgeClass}">${tierLabel}</span> ${r.name}</div>
                         <div>日期：${r.date} (預算 $${r.budget} / 實付 $${r.cost})</div>
                     </div>
                     <div class="record-amount">
@@ -2657,7 +2699,6 @@
         }
 
         function updateDashboardOverview() {
-            // 1. Food KPI & Filter by selected Year & Month
             let foodTotalBal = 0;
             let foodCount = 0;
             foodRecords.forEach(r => {
@@ -2668,7 +2709,6 @@
             });
             document.getElementById('dash-btn-food').innerText = `$${foodTotalBal.toFixed(1)} (${foodCount}筆)`;
 
-            // 2. Transit KPI & Filter by selected Year & Month
             let transitSaved = 0;
             transitRecords.forEach(r => {
                 if (!r.isPassPurchase && matchSelectedDate(r.date)) {
@@ -2677,7 +2717,6 @@
             });
             document.getElementById('dash-btn-transit').innerText = `$${transitSaved.toFixed(1)}`;
 
-            // 3. Sport KPI & Filter by selected Year & Month
             let sportCost = 0;
             let sportCount = 0;
             sportRecords.forEach(r => {
@@ -2688,7 +2727,6 @@
             });
             document.getElementById('dash-btn-sport').innerText = `$${sportCost.toFixed(1)} (${sportCount}次)`;
 
-            // 4. Love KPI & Filter by selected Year & Month
             let loveCost = 0;
             let loveCount = 0;
             loveRecords.forEach(r => {
@@ -2699,7 +2737,6 @@
             });
             document.getElementById('dash-btn-love').innerText = `$${loveCost.toFixed(1)} (${loveCount}筆)`;
 
-            // 5. Trip KPI & Filter by selected Year & Month
             let totalTripHkd = 0;
             trips.forEach(t => {
                 t.expenses.forEach(e => {
@@ -2711,12 +2748,10 @@
             });
             document.getElementById('dash-btn-trip').innerText = `$${totalTripHkd.toFixed(1)}`;
 
-            // 6. Debt KPI (全域)
             const payablesTotal = debtRecords.filter(r => r.kind === 'payable').reduce((sum, r) => sum + r.money, 0);
             const receivablesTotal = debtRecords.filter(r => r.kind === 'receivable').reduce((sum, r) => sum + r.money, 0);
             document.getElementById('dash-btn-debt').innerText = `欠:$${payablesTotal.toFixed(1)} / 收:$${receivablesTotal.toFixed(1)}`;
 
-            // 7. Total Expense
             let foodSpendingTotal = 0;
             foodRecords.forEach(r => {
                 if (matchSelectedDate(r.date) && !r.isResetSettlement && r.cost > 0) {
@@ -2752,7 +2787,7 @@
                 transitPastCycles,
                 transitBookmarks,
                 foodCycleId,
-                foodRecords: foodRecords.map(r => ({ ...r, type: r.type === '一般餐' ? '簡樸餐' : r.type })), // 匯出時相容回原格式
+                foodRecords,
                 foodPastCycles
             };
             const jsonString = JSON.stringify(backupData, null, 2);
@@ -2797,7 +2832,7 @@
                     if (data.loveCategories) localStorage.setItem('love_categories_v1', JSON.stringify(data.loveCategories));
                     if (data.loveRecords) localStorage.setItem('love_records_v1', JSON.stringify(data.loveRecords));
                     if (data.trips) localStorage.setItem('trips_v1', JSON.stringify(data.trips));
-                    if (data.debt_records_v2) localStorage.setItem('debt_records_v2', JSON.stringify(data.debt_records_v2));
+                    if (data.debtRecords) localStorage.setItem('debt_records_v2', JSON.stringify(data.debtRecords));
                     if (data.transitCycleId) localStorage.setItem('kmb_cycle_id', data.transitCycleId);
                     if (data.transitRecords) localStorage.setItem('kmb_records_v1', JSON.stringify(data.transitRecords));
                     if (data.transitPastCycles) localStorage.setItem('kmb_past_cycles', JSON.stringify(data.transitPastCycles));
