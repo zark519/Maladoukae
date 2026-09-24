@@ -1064,9 +1064,10 @@
         let foodRecords = JSON.parse(localStorage.getItem('food_records_v1') || JSON.stringify(INITIAL_DATA.foodRecords));
 
         let currentTransitDisplayCycle = 'ALL';
-        let currentFoodDisplayCycle = 'LATEST'; // 預設顯示最新週期
+        let currentFoodDisplayCycle = 'LATEST';
+        let activeTripId = null;
+        let missingExchangeCurrency = null;
 
-        // Ensure every record has a cycleId if not present
         transitRecords.forEach(r => { if(!r.cycleId) r.cycleId = 1; });
         foodRecords.forEach(r => { if(!r.cycleId) r.cycleId = 1; });
 
@@ -1139,42 +1140,40 @@
         }
 
         function updateDashboardOverview() {
-            // Food KPI matching date
             const filteredFood = foodRecords.filter(r => matchSelectedDate(r.date));
             const foodCostTotal = filteredFood.reduce((sum, r) => sum + (r.cost > 0 ? r.cost : 0), 0);
             const btnFood = document.getElementById('dash-btn-food');
             if(btnFood) btnFood.innerText = `$${foodCostTotal.toFixed(1)} (${filteredFood.length}筆)`;
 
-            // Transit KPI matching date
             const filteredTransit = transitRecords.filter(r => matchSelectedDate(r.date));
             const transitPayTotal = filteredTransit.reduce((sum, r) => sum + r.actualPay, 0);
             const btnTransit = document.getElementById('dash-btn-transit');
             if(btnTransit) btnTransit.innerText = `$${transitPayTotal.toFixed(1)}`;
 
-            // Sport KPI matching date
             const filteredSport = sportRecords.filter(r => matchSelectedDate(r.date));
             const sportCostTotal = filteredSport.reduce((sum, r) => sum + r.cost, 0);
             const btnSport = document.getElementById('dash-btn-sport');
             if(btnSport) btnSport.innerText = `$${sportCostTotal.toFixed(1)} (${filteredSport.length}次)`;
 
-            // Love KPI matching date
             const filteredLove = loveRecords.filter(r => matchSelectedDate(r.date));
             const loveCostTotal = filteredLove.reduce((sum, r) => sum + r.money, 0);
             const btnLove = document.getElementById('dash-btn-love');
             if(btnLove) btnLove.innerText = `$${loveCostTotal.toFixed(1)} (${filteredLove.length}筆)`;
 
-            // Trip KPI
             let tripTotal = 0;
-            trips.forEach(t => t.expenses.forEach(e => { if(matchSelectedDate(e.date)) tripTotal += e.hkdAmount; }));
+            trips.forEach(t => t.expenses.forEach(e => {
+                if(matchSelectedDate(e.date)) {
+                    const rate = t.exchangeTable[e.currency] || e.rateUsed || 1.0;
+                    tripTotal += t.isFrozen ? (e.hkdAmount || 0) : (e.amount * rate);
+                }
+            }));
             const btnTrip = document.getElementById('dash-btn-trip');
             if(btnTrip) btnTrip.innerText = `$${tripTotal.toFixed(1)}`;
 
-            // Debt KPI
             const debtTotal = debtRecords.reduce((sum, d) => sum + d.money, 0);
             const btnDebt = document.getElementById('dash-btn-debt');
             if(btnDebt) btnDebt.innerText = `$${debtTotal.toFixed(1)}`;
 
-            // Grand Total
             const grandTotal = foodCostTotal + transitPayTotal + sportCostTotal + loveCostTotal + tripTotal;
             const homeTotal = document.getElementById('home-total-expense');
             if(homeTotal) homeTotal.innerText = `$${grandTotal.toFixed(1)}`;
@@ -1392,8 +1391,6 @@
             if(!listEl) return;
 
             const filtered = currentTransitDisplayCycle === 'ALL' ? transitRecords : transitRecords.filter(r => (r.cycleId || 1) == currentTransitDisplayCycle);
-            
-            // Calculate total saved for current view
             const totalSaved = filtered.reduce((sum, r) => sum + r.saved, 0);
             document.getElementById('kmb-total-saved').innerText = `$${totalSaved.toFixed(1)}`;
             
@@ -1460,7 +1457,7 @@
             document.getElementById('transit-history-modal').classList.remove('active');
         }
 
-        // ==================== FOOD MODULE (食幾多慳幾多) ====================
+        // ==================== FOOD MODULE ====================
         function populateFoodDisplayCycleSelect() {
             const selectEl = document.getElementById('food-display-cycle-select');
             if(!selectEl) return;
@@ -1617,7 +1614,6 @@
             if(!listEl) return;
 
             const filtered = currentFoodDisplayCycle === 'ALL' ? foodRecords : foodRecords.filter(r => (r.cycleId || 1) == currentFoodDisplayCycle);
-
             const totalBalance = filtered.reduce((sum, r) => sum + (r.diff || 0), 0);
             const totalBalanceEl = document.getElementById('total-balance');
             if(totalBalanceEl) {
@@ -1947,29 +1943,260 @@
             `).join('');
         }
 
-        // TRIP & DEBT STUBS
-        function renderTrips() {
-            const container = document.getElementById('trip-list-container');
-            if(!container) return;
-            container.innerHTML = trips.length === 0 ? '<div style="text-align:center; color:#9ca3af; padding:20px;">暫無旅程</div>' : trips.map(t => `
-                <div class="trip-card">
-                    <div class="trip-card-header"><div class="trip-card-title">${t.title}</div><span class="${t.isFrozen?'trip-badge-frozen':'trip-badge-active'}">${t.isFrozen?'已凍結':'進行中'}</span></div>
-                    <div style="font-size:0.85rem; color:#6b7280;">開支筆數：${t.expenses.length} 筆</div>
-                </div>
-            `).join('');
+        // ==================== TRIP & EXCHANGE MODULE (RESTORED FROM 4.2.5) ====================
+        function openCreateTripModal() {
+            document.getElementById('trip-input-title').value = '';
+            document.getElementById('create-trip-modal').classList.add('active');
         }
-        function openCreateTripModal() { document.getElementById('create-trip-modal').classList.add('active'); }
         function closeCreateTripModal() { document.getElementById('create-trip-modal').classList.remove('active'); }
         function saveNewTrip() {
             const title = document.getElementById('trip-input-title').value.trim();
             if(!title) { alert('請輸入旅程名稱！'); return; }
-            trips.unshift({ id: Date.now(), title, isFrozen: false, exchangeTable: { "HKD": 1 }, bookmarks: ["美食","住宿","交通","門票","購物","手信"], expenses: [] });
+            trips.unshift({ id: Date.now(), title, isFrozen: false, exchangeTable: { "HKD": 1.0 }, bookmarks: ["美食","住宿","交通","門票","購物","手信"], expenses: [] });
             saveAllData();
             closeCreateTripModal();
             renderTrips();
             updateDashboardOverview();
         }
+        function deleteTrip(id) {
+            if (confirm('確定要刪除整個旅程及其所有記帳嗎？')) {
+                trips = trips.filter(t => t.id !== id);
+                saveAllData();
+                renderTrips();
+                updateDashboardOverview();
+            }
+        }
+        function openTripDetail(id) {
+            activeTripId = id;
+            renderTripDetailModal();
+            document.getElementById('trip-detail-modal').classList.add('active');
+        }
+        function closeTripDetailModal() {
+            document.getElementById('trip-detail-modal').classList.remove('active');
+            activeTripId = null;
+            updateDashboardOverview();
+        }
+        function getActiveTrip() { return trips.find(t => t.id === activeTripId); }
+        function toggleTripFreeze() {
+            const trip = getActiveTrip();
+            if (!trip) return;
+            trip.isFrozen = !trip.isFrozen;
+            saveAllData();
+            renderTripDetailModal();
+            updateDashboardOverview();
+        }
+        function saveExchangeRate() {
+            const trip = getActiveTrip();
+            if (!trip) return;
+            const cur = document.getElementById('ex-currency').value.trim().toUpperCase();
+            const rate = parseFloat(document.getElementById('ex-rate').value);
+            if (!cur || isNaN(rate)) { alert('請輸入正確的幣別與匯率數值！'); return; }
+            trip.exchangeTable[cur] = rate;
+            saveAllData();
+            document.getElementById('ex-currency').value = '';
+            document.getElementById('ex-rate').value = '';
+            renderExchangeTable();
+            renderTripExpenses();
+        }
+        function deleteExchangeRate(cur) {
+            const trip = getActiveTrip();
+            if (!trip) return;
+            if (cur === 'HKD') { alert('HKD 基礎貨幣不能刪除！'); return; }
+            delete trip.exchangeTable[cur];
+            saveAllData();
+            renderExchangeTable();
+            renderTripExpenses();
+        }
+        function renderExchangeTable() {
+            const trip = getActiveTrip();
+            const listEl = document.getElementById('exchange-rate-list');
+            if (!trip || !listEl) return;
+            const table = trip.exchangeTable;
+            listEl.innerHTML = Object.keys(table).map(cur => `
+                <div class="bookmark-item">
+                    <span style="font-size: 0.82rem; font-weight:600;">1 ${cur} = ${table[cur]} HKD</span>
+                    ${cur !== 'HKD' ? `<button type="button" class="bookmark-del-btn" onclick="deleteExchangeRate('${cur}')">刪除</button>` : ''}
+                </div>
+            `).join('');
+        }
+        function renderTripDetailModal() {
+            const trip = getActiveTrip();
+            if (!trip) return;
+            document.getElementById('trip-detail-modal-title').innerText = `✈️ ${trip.title}`;
+            renderExchangeTable();
+            const statusText = document.getElementById('trip-freeze-text');
+            const freezeBtn = document.getElementById('trip-freeze-btn');
+            if (trip.isFrozen) {
+                statusText.innerText = `狀態：🔒 已凍結金額 (匯率變動不影響結算)`;
+                freezeBtn.innerText = `🔓 解凍旅程`;
+                freezeBtn.style.background = 'var(--success)';
+            } else {
+                statusText.innerText = `狀態：🔓 進行中 (匯率即時連動)`;
+                freezeBtn.innerText = `🔒 凍結旅程金額`;
+                freezeBtn.style.background = 'var(--primary)';
+            }
+            renderTripExpenses();
+        }
+        function openTripExpenseModal(editId = null) {
+            document.getElementById('te-edit-id').value = editId || '';
+            if (editId) {
+                const trip = getActiveTrip();
+                const exp = trip.expenses.find(e => e.id === editId);
+                if (exp) {
+                    document.getElementById('te-input-date').value = exp.date;
+                    document.getElementById('te-input-activity').value = exp.activity;
+                    document.getElementById('te-input-amount').value = exp.amount;
+                    document.getElementById('te-input-currency').value = exp.currency;
+                }
+            } else {
+                document.getElementById('te-input-date').valueAsDate = new Date();
+                document.getElementById('te-input-activity').value = '';
+                document.getElementById('te-input-amount').value = '';
+                document.getElementById('te-input-currency').value = 'JPY';
+            }
+            populateTripBookmarkDropdown();
+            document.getElementById('trip-expense-modal').classList.add('active');
+        }
+        function closeTripExpenseModal() { document.getElementById('trip-expense-modal').classList.remove('active'); }
+        function populateTripBookmarkDropdown() {
+            const trip = getActiveTrip();
+            const selectEl = document.getElementById('te-select-bookmark');
+            if (!trip || !selectEl) return;
+            selectEl.innerHTML = '<option value="">-- 選擇常用活動類型 --</option>';
+            trip.bookmarks.forEach(bm => { selectEl.innerHTML += `<option value="${bm}">${bm}</option>`; });
+        }
+        function fillTripBookmark() {
+            const val = document.getElementById('te-select-bookmark').value;
+            if (val) document.getElementById('te-input-activity').value = val;
+        }
+        function openTripBookmarkManage() { renderTripBookmarkManageList(); document.getElementById('trip-bookmark-modal').classList.add('active'); }
+        function closeTripBookmarkManage() { document.getElementById('trip-bookmark-modal').classList.remove('active'); populateTripBookmarkDropdown(); }
+        function saveTripBookmarkType() {
+            const trip = getActiveTrip();
+            if (!trip) return;
+            const name = document.getElementById('tbm-input-name').value.trim();
+            if (!name) return;
+            if (!trip.bookmarks.includes(name)) { trip.bookmarks.push(name); saveAllData(); }
+            document.getElementById('tbm-input-name').value = '';
+            renderTripBookmarkManageList();
+            populateTripBookmarkDropdown();
+        }
+        function deleteTripBookmarkType(bm) {
+            const trip = getActiveTrip();
+            if (!trip) return;
+            trip.bookmarks = trip.bookmarks.filter(b => b !== bm);
+            saveAllData();
+            renderTripBookmarkManageList();
+            populateTripBookmarkDropdown();
+        }
+        function renderTripBookmarkManageList() {
+            const trip = getActiveTrip();
+            const listEl = document.getElementById('trip-bookmark-list');
+            if (!trip || !listEl) return;
+            listEl.innerHTML = trip.bookmarks.map(bm => `
+                <div class="bookmark-item"><span style="font-size: 0.82rem; font-weight:600;">${bm}</span><button type="button" class="bookmark-del-btn" onclick="deleteTripBookmarkType('${bm}')">刪除</button></div>
+            `).join('');
+        }
+        function saveTripExpense() {
+            const editId = document.getElementById('te-edit-id').value;
+            const trip = getActiveTrip();
+            if (!trip) return;
+            const date = document.getElementById('te-input-date').value;
+            const activity = document.getElementById('te-input-activity').value.trim();
+            const amount = parseFloat(document.getElementById('te-input-amount').value);
+            const currency = document.getElementById('te-input-currency').value.trim().toUpperCase();
 
+            if (!date || !activity || isNaN(amount) || !currency) { alert('請完整填寫日期、活動、金額與幣別！'); return; }
+
+            if (currency !== 'HKD' && trip.exchangeTable[currency] === undefined) {
+                missingExchangeCurrency = currency;
+                document.getElementById('exchange-prompt-msg').innerText = `系統中找不到幣別 [${currency}] 的匯率對換紀錄。`;
+                document.getElementById('ex-prompt-label').innerText = `請輸入 1 ${currency} = 幾多 HKD：`;
+                document.getElementById('ex-prompt-value').value = '';
+                document.getElementById('exchange-prompt-modal').classList.add('active');
+                return;
+            }
+            executeSaveTripExpense(date, activity, amount, currency, editId);
+        }
+        function executeSaveTripExpense(date, activity, amount, currency, editId = null) {
+            const trip = getActiveTrip();
+            if (!trip) return;
+            const rate = trip.exchangeTable[currency] || 1.0;
+            const hkdAmount = Math.round(amount * rate * 10) / 10;
+
+            if (editId) {
+                const exp = trip.expenses.find(e => e.id == editId);
+                if (exp) { exp.date = date; exp.activity = activity; exp.amount = amount; exp.currency = currency; exp.rateUsed = rate; exp.hkdAmount = hkdAmount; }
+            } else {
+                trip.expenses.unshift({ id: Date.now(), date, activity, amount, currency, hkdAmount, rateUsed: rate });
+            }
+            saveAllData();
+            closeTripExpenseModal();
+            renderTripDetailModal();
+            updateDashboardOverview();
+        }
+        function closeExchangePromptModal() { document.getElementById('exchange-prompt-modal').classList.remove('active'); missingExchangeCurrency = null; }
+        function saveMissingExchangeRate() {
+            const trip = getActiveTrip();
+            if (!trip || !missingExchangeCurrency) return;
+            const val = parseFloat(document.getElementById('ex-prompt-value').value);
+            if (isNaN(val)) { alert('請輸入有效的匯率數值！'); return; }
+            trip.exchangeTable[missingExchangeCurrency] = val;
+            saveAllData();
+            closeExchangePromptModal();
+            executeSaveTripExpense(document.getElementById('te-input-date').value, document.getElementById('te-input-activity').value.trim(), parseFloat(document.getElementById('te-input-amount').value), missingExchangeCurrency, document.getElementById('te-edit-id').value);
+        }
+        function deleteTripExpense(expId) {
+            const trip = getActiveTrip();
+            if (!trip) return;
+            if (confirm('確定要刪除這筆開支記錄嗎？')) {
+                trip.expenses = trip.expenses.filter(e => e.id !== expId);
+                saveAllData();
+                renderTripDetailModal();
+                updateDashboardOverview();
+            }
+        }
+        function renderTripExpenses() {
+            const trip = getActiveTrip();
+            const listEl = document.getElementById('trip-expense-list');
+            if (!trip || !listEl) return;
+            if (trip.expenses.length === 0) { listEl.innerHTML = '<div style="text-align:center; color:#9ca3af; padding:20px;">本旅程暫無開支記錄</div>'; return; }
+            listEl.innerHTML = trip.expenses.map(e => {
+                const currentRate = trip.exchangeTable[e.currency] || e.rateUsed;
+                const displayHkd = trip.isFrozen ? e.hkdAmount : Math.round(e.amount * currentRate * 10) / 10;
+                return `
+                <div class="record-card">
+                    <div class="record-info"><div><span class="badge badge-trip">${e.activity}</span> ${e.amount} ${e.currency}</div><div>日期：${e.date} (折算: $${displayHkd.toFixed(1)} HKD)</div></div>
+                    <div class="record-amount"><div class="record-cost" style="color: var(--trip-blue);">$${displayHkd.toFixed(1)} HKD</div>
+                    <div><button class="btn-edit-item" onclick="openTripExpenseModal(${e.id})">編輯</button><button class="bookmark-del-btn" onclick="deleteTripExpense(${e.id})">刪除</button></div></div>
+                </div>
+                `;
+            }).join('');
+        }
+        function renderTrips() {
+            const listEl = document.getElementById('trip-list-container');
+            if (!listEl) return;
+            if (trips.length === 0) { listEl.innerHTML = '<div style="text-align:center; color:#9ca3af; padding:20px;">暫無任何旅程，請點擊上方按鈕建立</div>'; return; }
+            listEl.innerHTML = trips.map(t => {
+                let totalHkd = 0;
+                t.expenses.forEach(e => {
+                    const rate = t.exchangeTable[e.currency] || e.rateUsed || 1.0;
+                    totalHkd += t.isFrozen ? (e.hkdAmount || 0) : (e.amount * rate);
+                });
+                return `
+                <div class="trip-card">
+                    <div class="trip-card-header"><div class="trip-card-title">${t.title}</div><div>${t.isFrozen ? '<span class="trip-badge-frozen">🔒 已凍結</span>' : '<span class="trip-badge-active">🔓 進行中</span>'}</div></div>
+                    <div style="font-size: 0.85rem; color: #4b5563; margin-bottom: 8px;">總洗費折合：<strong>$${totalHkd.toFixed(1)} HKD</strong> (${t.expenses.length} 筆開支)</div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="btn-sm-action" style="flex:1; background: var(--trip-blue); color: white;" onclick="openTripDetail(${t.id})">🔍 查看 / 記帳 / 匯率</button>
+                        <button class="bookmark-del-btn" onclick="deleteTrip(${t.id})">刪除旅程</button>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        // DEBT MODULE
         function switchDebtTab(tab) {
             document.querySelectorAll('.debt-tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelectorAll('.debt-section').forEach(s => s.classList.remove('active'));
@@ -2014,7 +2241,6 @@
             const payList = document.getElementById('payable-records-list');
             const recList = document.getElementById('receivable-records-list');
             if(!payList || !recList) return;
-
             const pay = debtRecords.filter(d => d.kind === 'payable');
             const rec = debtRecords.filter(d => d.kind === 'receivable');
 
@@ -2042,6 +2268,7 @@
             renderLove();
             renderTrips();
             renderDebt();
+            updateDashboardOverview();
         };
     </script>
 </body>
